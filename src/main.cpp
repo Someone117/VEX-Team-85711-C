@@ -21,13 +21,13 @@
 
 using namespace vex;
 
-controller::axis leftDriveAxis() { return Controller1.Axis3; }
-controller::axis rightDriveAxis() { return Controller1.Axis2; }
+//controller::axis leftDriveAxis() { return Controller1.Axis3; }
+//controller::axis rightDriveAxis() { return Controller1.Axis2; }
 controller::button fly() { return Controller1.ButtonA; }
 
 void drive() {
-  leftDriveAxis().changed([](){ powerLeft(leftDriveAxis().position()); });
-  rightDriveAxis().changed([](){ powerRight(rightDriveAxis().position()); });
+  //leftDriveAxis().changed([](){ powerLeft(leftDriveAxis().position()); });
+  //rightDriveAxis().changed([](){ powerRight(rightDriveAxis().position()); });
 
   if(fly().pressing()) {
     Motor7.spin(forward);
@@ -44,6 +44,7 @@ void teleop() {
 
 void init() {
   Motor7.setMaxTorque(100, percent);
+  Motor7.setVelocity(100,percent);
   Motor7.setStopping(coast);
   
 }
@@ -56,5 +57,7 @@ int main() {
   // Initializing Robot Configuration. DO NOT REMOVE!
   vexcodeInit();
   
+  init();
+
   teleop();
 }
