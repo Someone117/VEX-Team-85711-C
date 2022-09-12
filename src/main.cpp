@@ -11,28 +11,59 @@
 // Robot Configuration:
 // [Name]               [Type]        [Port(s)]
 // Controller1          controller                    
-// Motor7               motor         7               
-// LeftMotors           motor_group   1, 2            
-// RightMotors          motor_group   3, 4            
+// FrontLeft            motor         1               
+// FrontRight           motor         2               
+// BackLeft             motor         3               
+// BackRight            motor         4               
 // ---- END VEXCODE CONFIGURED DEVICES ----
 
 #include "vex.h"
 #include "drive.h"
+#include "Math_Vector.h"
 
 using namespace vex;
 
-//controller::axis leftDriveAxis() { return Controller1.Axis3; }
-//controller::axis rightDriveAxis() { return Controller1.Axis2; }
-controller::button fly() { return Controller1.ButtonA; }
+controller::axis leftDriveAxis() { return Controller1.Axis3; }
+controller::axis rightDriveAxis() { return Controller1.Axis4; }
+
+double map(double x, double in_min, double in_max, double out_min, double out_max) {
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
 
 void drive() {
-  //leftDriveAxis().changed([](){ powerLeft(leftDriveAxis().position()); });
-  //rightDriveAxis().changed([](){ powerRight(rightDriveAxis().position()); });
-
-  if(fly().pressing()) {
-    Motor7.spin(forward);
+  // may work, else just change directions and rotation angle
+  if(std::abs(leftDriveAxis().position()) > 0 && std::abs(rightDriveAxis().position()) > 0) {
+    Comp_Vector driveVec(leftDriveAxis().position(), rightDriveAxis().position());
+    driveVec.rotate(M_PI/4.0);
+    double x = map(driveVec.get_x(), 0, cos(driveVec.get_angle()), 0, 1);
+    double y = map(driveVec.get_y(), 0, sin(driveVec.get_angle()), 0, 1);
+    if(x > 0) {
+      FrontLeft.setVelocity(std::abs(x), percent);
+      BackRight.setVelocity(std::abs(x), percent);
+      FrontLeft.spin(forward);
+      BackRight.spin(forward);
+    } else {
+      FrontLeft.setVelocity(std::abs(x), percent);
+      BackRight.setVelocity(std::abs(x), percent);
+      FrontLeft.spin(reverse);
+      BackRight.spin(reverse);
+    }
+    if(y > 0) {
+      FrontRight.setVelocity(std::abs(x), percent);
+      BackLeft.setVelocity(std::abs(x), percent);
+      FrontRight.spin(forward);
+      BackLeft.spin(forward);
+    } else {
+      FrontRight.setVelocity(std::abs(x), percent);
+      BackLeft.setVelocity(std::abs(x), percent);
+      FrontRight.spin(reverse);
+      BackLeft.spin(reverse);
+    }
   } else {
-    Motor7.stop();
+    FrontLeft.stop();
+    FrontRight.stop();
+    BackLeft.stop();
+    BackRight.stop();
   }
 
   wait(100, msec);
@@ -43,10 +74,16 @@ void teleop() {
 }
 
 void init() {
-  Motor7.setMaxTorque(100, percent);
-  Motor7.setVelocity(100,percent);
-  Motor7.setStopping(coast);
-  
+  //Drive motors
+  // should we set velocity??
+  FrontLeft.setMaxTorque(100,percent);
+  FrontLeft.setStopping(coast);
+  FrontRight.setMaxTorque(100,percent);
+  FrontRight.setStopping(coast);
+  BackLeft.setMaxTorque(100,percent);
+  BackLeft.setStopping(coast);
+  BackRight.setMaxTorque(100,percent);
+  BackRight.setStopping(coast);
 }
 
 void run() {
