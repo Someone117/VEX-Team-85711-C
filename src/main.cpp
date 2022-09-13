@@ -11,14 +11,13 @@
 // Robot Configuration:
 // [Name]               [Type]        [Port(s)]
 // Controller1          controller                    
-// FrontLeft            motor         1               
-// FrontRight           motor         2               
-// BackLeft             motor         3               
-// BackRight            motor         4               
+// FrontLeft            motor         3               
+// FrontRight           motor         10              
+// BackLeft             motor         11              
+// BackRight            motor         15              
 // ---- END VEXCODE CONFIGURED DEVICES ----
 
 #include "vex.h"
-#include "drive.h"
 #include "Math_Vector.h"
 
 using namespace vex;
@@ -32,7 +31,7 @@ double map(double x, double in_min, double in_max, double out_min, double out_ma
 
 void drive() {
   // may work, else just change directions and rotation angle
-  if(std::abs(leftDriveAxis().position()) > 0 && std::abs(rightDriveAxis().position()) > 0) {
+  if(std::abs(leftDriveAxis().position()) > 0 || std::abs(rightDriveAxis().position()) > 0) {
     Comp_Vector driveVec(leftDriveAxis().position(), rightDriveAxis().position());
     driveVec.rotate(M_PI/4.0);
     double x = map(driveVec.get_x(), 0, cos(driveVec.get_angle()), 0, 1);
@@ -43,19 +42,19 @@ void drive() {
       FrontLeft.spin(forward);
       BackRight.spin(forward);
     } else {
-      FrontLeft.setVelocity(std::abs(x), percent);
-      BackRight.setVelocity(std::abs(x), percent);
+      FrontLeft.setVelocity(std::abs(x)*100.0, percent);
+      BackRight.setVelocity(std::abs(x)*100.0, percent);
       FrontLeft.spin(reverse);
       BackRight.spin(reverse);
     }
     if(y > 0) {
-      FrontRight.setVelocity(std::abs(x), percent);
-      BackLeft.setVelocity(std::abs(x), percent);
+      FrontRight.setVelocity(std::abs(x)*100.0, percent);
+      BackLeft.setVelocity(std::abs(x)*100.0, percent);
       FrontRight.spin(forward);
       BackLeft.spin(forward);
     } else {
-      FrontRight.setVelocity(std::abs(x), percent);
-      BackLeft.setVelocity(std::abs(x), percent);
+      FrontRight.setVelocity(std::abs(x)*100.0, percent);
+      BackLeft.setVelocity(std::abs(x)*100.0, percent);
       FrontRight.spin(reverse);
       BackLeft.spin(reverse);
     }
