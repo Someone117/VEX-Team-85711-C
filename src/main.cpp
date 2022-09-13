@@ -38,8 +38,8 @@ void drive() {
     double x = map(driveVec.get_x(), 0, cos(driveVec.get_angle()), 0, 1);
     double y = map(driveVec.get_y(), 0, sin(driveVec.get_angle()), 0, 1);
     if(x > 0) {
-      FrontLeft.setVelocity(std::abs(x), percent);
-      BackRight.setVelocity(std::abs(x), percent);
+      FrontLeft.setVelocity(std::abs(x)*100.0, percent);
+      BackRight.setVelocity(std::abs(x)*100.0, percent);
       FrontLeft.spin(forward);
       BackRight.spin(forward);
     } else {
