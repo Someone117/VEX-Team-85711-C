@@ -30,33 +30,38 @@ double map(double x, double in_min, double in_max, double out_min, double out_ma
 }
 
 void drive() {
+  FrontLeft.stop();
+  FrontRight.stop();
+  BackLeft.stop();
+  BackRight.stop();
   // may work, else just change directions and rotation angle
-  if(std::abs(leftDriveAxis().position()) > 0 || std::abs(rightDriveAxis().position()) > 0) {
+  if(std::abs(leftDriveAxis().position()) > 10 || std::abs(rightDriveAxis().position()) > 10) {
     Comp_Vector driveVec(leftDriveAxis().position(), rightDriveAxis().position());
     driveVec.rotate(M_PI/4.0);
-    double x = map(driveVec.get_x(), 0, cos(driveVec.get_angle()), 0, 1);
-    double y = map(driveVec.get_y(), 0, sin(driveVec.get_angle()), 0, 1);
-    if(x > 0) {
-      FrontLeft.setVelocity(std::abs(x)*100.0, percent);
-      BackRight.setVelocity(std::abs(x)*100.0, percent);
+    double x1 = leftDriveAxis().position();
+    double y1 = rightDriveAxis().position();
+    double x = map(driveVec.get_x(), 0, 100*cos(driveVec.get_angle()), 0, 100);
+    double y = map(driveVec.get_y(), 0, 100*sin(driveVec.get_angle()), 0, 100);
+    
+
+    FrontLeft.setVelocity(x, percent);
+    FrontRight.setVelocity(y, percent);
+    BackLeft.setVelocity(x, percent);
+    BackRight.setVelocity(y, percent);
+    
+    if(y1 > 0) {
       FrontLeft.spin(forward);
-      BackRight.spin(forward);
-    } else {
-      FrontLeft.setVelocity(std::abs(x)*100.0, percent);
-      BackRight.setVelocity(std::abs(x)*100.0, percent);
-      FrontLeft.spin(reverse);
       BackRight.spin(reverse);
-    }
-    if(y > 0) {
-      FrontRight.setVelocity(std::abs(x)*100.0, percent);
-      BackLeft.setVelocity(std::abs(x)*100.0, percent);
-      FrontRight.spin(forward);
-      BackLeft.spin(forward);
     } else {
-      FrontRight.setVelocity(std::abs(x)*100.0, percent);
-      BackLeft.setVelocity(std::abs(x)*100.0, percent);
-      FrontRight.spin(reverse);
+      FrontLeft.spin(reverse);
+      BackRight.spin(forward);
+    }
+    if(x1 > 0) {
       BackLeft.spin(reverse);
+      FrontRight.spin(forward);
+    } else {
+      BackLeft.spin(forward);
+      FrontRight.spin(reverse);
     }
   } else {
     FrontLeft.stop();
