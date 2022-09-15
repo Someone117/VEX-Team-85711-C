@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /*                                                                            */
 /*    Module:       main.cpp                                                  */
-/*    Author:       C:\Users\Someo                                            */
+/*    Author:       Vex Team 8511C                                            */
 /*    Created:      Tue Aug 30 2022                                           */
 /*    Description:  V5 project                                                */
 /*                                                                            */
@@ -29,10 +29,11 @@ controller::axis turnAxis() { return Controller1.Axis1; }
 void run() {
   // I can make it so that you can drive and spin but that is pointless
   Comp_Vector driveVec(leftDriveAxis().position(), rightDriveAxis().position());
-  if(driveVec.get_mag() > 5) {
-    drive(driveVec);
-  } else if(abs(turnAxis().position()) > 5) {
+  
+  if(abs(turnAxis().position()) > 5) {
     turn(turnAxis().position());
+  } else if(driveVec.get_mag() > 5) {
+    drive(driveVec);
   } else {
     FrontLeft.stop();
     FrontRight.stop();
