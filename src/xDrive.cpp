@@ -7,14 +7,14 @@ double map(double x, double in_min, double in_max, double out_min, double out_ma
 //TODO: Check spining
 void turn(double v) {
   bool FL = v > 0;
-  bool FR = v < 0;
-  bool BL = v < 0;
+  bool FR = v > 0;
+  bool BL = v > 0;
   bool BR = v > 0;
 
-  FrontLeft.setVelocity(v, percent);
-  FrontRight.setVelocity(v, percent);
-  BackLeft.setVelocity(v, percent);
-  BackRight.setVelocity(v, percent);
+  FrontLeft.setVelocity(std::abs(v), percent);
+  FrontRight.setVelocity(std::abs(v), percent);
+  BackLeft.setVelocity(std::abs(v), percent);
+  BackRight.setVelocity(std::abs(v), percent);
   
   FrontLeft.spin(FL ? forward : reverse);
   FrontRight.spin(FR ? forward : reverse);

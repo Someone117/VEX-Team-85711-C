@@ -27,13 +27,15 @@ controller::axis rightDriveAxis() { return Controller1.Axis4; }
 controller::axis turnAxis() { return Controller1.Axis1; }
 
 void run() {
-  // I can make it so that you can drive and spin but that is pointless
   Comp_Vector driveVec(leftDriveAxis().position(), rightDriveAxis().position());
-  
-  if(abs(turnAxis().position()) > 5) {
-    turn(turnAxis().position());
-  } else if(driveVec.get_mag() > 5) {
-    drive(driveVec);
+  double deadZone = 5;
+
+  if(abs(turnAxis().position()) > deadZone || driveVec.get_mag() > deadZone) {
+    if(driveVec.get_mag() > abs(turnAxis().position())) {
+      drive(driveVec);
+    } else {
+      turn(turnAxis().position());
+    }
   } else {
     FrontLeft.stop();
     FrontRight.stop();
