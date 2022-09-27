@@ -28,7 +28,7 @@ controller::axis turnAxis() { return Controller1.Axis1; }
 
 void run() {
   Comp_Vector driveVec(leftDriveAxis().position(), rightDriveAxis().position());
-  double deadZone = 5;
+  double deadZone = 10;
 
   if(abs(turnAxis().position()) > deadZone || driveVec.get_mag() > deadZone) {
     if(driveVec.get_mag() > abs(turnAxis().position())) {
@@ -43,7 +43,6 @@ void run() {
     BackRight.stop();
   }
   wait(100, msec);
-
 }
 
 void teleop() {

@@ -24,14 +24,22 @@ void turn(double v) {
 
 //TODO: Check drive
 void drive(Comp_Vector driveVec) {
+  Comp_Vector drive2(driveVec.get_x(), driveVec.get_y());
   driveVec.rotate(-M_PI/4.0);
   
   bool FL = 0;
   bool FR = 0;
   bool BL = 0;
   bool BR = 0;
-  double x = map(std::abs(driveVec.get_x()), 0, std::abs(100*cos(driveVec.get_angle())), 0, 100);
-  double y = map(std::abs(driveVec.get_y()), 0, std::abs(100*sin(driveVec.get_angle())), 0, 100);
+  //double x = std::abs(driveVec.get_x());
+  //double y = std::abs(driveVec.get_y());
+
+  double x = map(std::abs(driveVec.get_x()), 0, std::abs(100*cos(drive2.get_angle())), 0, 100);
+  double y = map(std::abs(driveVec.get_y()), 0, std::abs(100*sin(drive2.get_angle())), 0, 100);
+  if(x > 100) x = 100;
+  if(y > 100) y = 100;
+  if(x < 10) x = 0;
+  if(y < 10) y = 0;
 
   FL = driveVec.get_x() > 0;
   FR = driveVec.get_y() > 0;
@@ -40,11 +48,15 @@ void drive(Comp_Vector driveVec) {
 
   FrontLeft.setVelocity(x, percent);
   FrontRight.setVelocity(y, percent);
-  BackLeft.setVelocity(x, percent);
-  BackRight.setVelocity(y, percent);
+  BackLeft.setVelocity(y, percent);
+  BackRight.setVelocity(x, percent);
 
   FrontLeft.spin(FL ? forward : reverse);
   FrontRight.spin(FR ? forward : reverse);
   BackLeft.spin(BL ? forward : reverse);
   BackRight.spin(BR ? forward : reverse);
+
+  Brain.Screen.clearScreen();
+  Brain.Screen.newLine();
+  Brain.Screen.print(driveVec.print().c_str());
 }

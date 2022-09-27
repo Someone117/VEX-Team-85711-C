@@ -1,4 +1,6 @@
 #include <cmath>
+#include <string>
+#include <sstream>
 
 class Comp_Vector{
     private:
@@ -50,6 +52,11 @@ class Comp_Vector{
         }
         double get_mag(){
             return mag; 
+        }
+        std::basic_string<char> print() {
+          std::stringstream ss;
+          ss << x << " " << y;
+          return ss.str();
         }
 };
 
