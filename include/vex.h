@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /*                                                                            */
 /*    Module:       vex.h                                                     */
-/*    Author:       Vex Robotics                                              */
+/*    Author:       Vex Team 85711C                                              */
 /*    Created:      1 Feb 2019                                                */
 /*    Description:  Default header for V5 projects                            */
 /*                                                                            */
@@ -19,7 +19,7 @@
 
 #define waitUntil(condition)                                                   \
   do {                                                                         \
-    wait(5, msec);                                                             \
+    vex::task::sleep(5);                                                             \
   } while (!(condition))
 
 #define repeat(iterations)                                                     \

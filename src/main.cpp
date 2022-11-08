@@ -15,12 +15,16 @@
 // FrontRight           motor         10              
 // BackLeft             motor         11              
 // BackRight            motor         15              
+// Flywheel             motor         13              
 // ---- END VEXCODE CONFIGURED DEVICES ----
 
 #include "vex.h"
 #include "xDrive.h"
+#include "Autonomous.h"
 
 using namespace vex;
+
+vex::competition Competition;
 
 controller::axis leftDriveAxis() { return Controller1.Axis3; }
 controller::axis rightDriveAxis() { return Controller1.Axis4; }
@@ -42,16 +46,31 @@ void run() {
     BackLeft.stop();
     BackRight.stop();
   }
-  wait(100, msec);
+  //wait(100, msec);
+  vex::task::sleep(100);
 }
 
 void teleop() {
+  void init();
   while(true) run();
 }
 
+void auton() {
+  // Command queue
+  vector<Command> queue{};
+  // Commands to execute
+  queue.push_back(*(new DriveCommand(*new Comp_Vector(1.0, 0.0), 10.0, nullptr, true)));
+  queue.push_back(*(new TurnCommand(1.0, 10.0, &queue[0], false)));
+
+  // Execute all commands
+  execute(queue);  
+}
+
+void auton_Skills() {
+
+}
+
 void init() {
-  //Drive motors
-  // should we set velocity??
   FrontLeft.setMaxTorque(100,percent);
   FrontLeft.setStopping(coast);
   FrontRight.setMaxTorque(100,percent);
@@ -60,6 +79,8 @@ void init() {
   BackLeft.setStopping(coast);
   BackRight.setMaxTorque(100,percent);
   BackRight.setStopping(coast);
+  Flywheel.setStopping(coast);
+  Flywheel.setVelocity(100,percent);
 }
 
 int main() {
@@ -68,5 +89,9 @@ int main() {
   
   init();
 
-  teleop();
+  // Skills test
+  //Controller1.ButtonA.pressed(auton_Skills);
+
+  Competition.drivercontrol(teleop);
+  Competition.autonomous([](){ auton(); });
 }

@@ -4,7 +4,6 @@ double map(double x, double in_min, double in_max, double out_min, double out_ma
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
-//TODO: Check spining
 void turn(double v) {
   bool FL = v > 0;
   bool FR = v > 0;
@@ -22,7 +21,6 @@ void turn(double v) {
   BackRight.spin(BR ? forward : reverse);
 }
 
-//TODO: Check drive
 void drive(Comp_Vector driveVec) {
   Comp_Vector drive2(driveVec.get_x(), driveVec.get_y());
   driveVec.rotate(-M_PI/4.0);
@@ -55,8 +53,4 @@ void drive(Comp_Vector driveVec) {
   FrontRight.spin(FR ? forward : reverse);
   BackLeft.spin(BL ? forward : reverse);
   BackRight.spin(BR ? forward : reverse);
-
-  Brain.Screen.clearScreen();
-  Brain.Screen.newLine();
-  Brain.Screen.print(driveVec.print().c_str());
 }

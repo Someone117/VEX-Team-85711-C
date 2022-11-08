@@ -1,3 +1,4 @@
+#pragma once
 #include <cmath>
 #include <string>
 #include <sstream>
@@ -58,6 +59,7 @@ class Comp_Vector{
           ss << x << " " << y;
           return ss.str();
         }
+        friend Comp_Vector operator+(const Comp_Vector& a, const Comp_Vector&b);
 };
 
 class Mag_Vector : public Comp_Vector{
