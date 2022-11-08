@@ -10,7 +10,7 @@ inline double DegreesToRadians(double degrees) {
 
 // TODO: CHECK WHEEL RADIUS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 inline double RadiansToRotations(double radians) {
-  return radians * M_PI * 6;
+  return radians * M_PI * 1.125;
 }
 
 
@@ -33,6 +33,7 @@ int indexerTask(void* args);
 
 class Command {
 public:
+  int type;
   bool is_complete_;
   bool is_blocking_;
   inline bool isComplete() {
@@ -40,9 +41,7 @@ public:
   }
   inline void setComplete(bool a) {
     is_complete_ = a;
-  };
-  inline virtual void execute() {
-    is_complete_ = true;
+    type = 0;
   };
 };
 
@@ -58,8 +57,9 @@ public:
   {
     is_complete_ = false;
     is_blocking_ = async;
+    type = 1;
   }
-  inline void execute() override {
+  inline void execute() {
     if(is_blocking_) {
       vex::task t(&driveTask, this);
     } else {
@@ -77,8 +77,9 @@ public:
   {
     is_complete_ = false;
     is_blocking_ = async;
+    type = 2;
   }
-  inline void execute() override {
+  inline void execute() {
     if(is_blocking_) {
       vex::task t(&turnTask, this);
     } else {
@@ -96,8 +97,9 @@ public:
   {
     is_complete_ = false;
     is_blocking_ = async;
+    type = 3;
   }
-  inline void execute() override {
+  inline void execute() {
     if(is_blocking_) {
       vex::task t(&intakeTask, this);
     } else {
@@ -114,8 +116,9 @@ public:
   {
     is_complete_ = false;
     is_blocking_ = async;
+    type = 4;
   }
-  inline void execute() override {
+  inline void execute() {
     if(is_blocking_) {
       vex::task t(&rollerTask, this);
     } else {
@@ -132,8 +135,9 @@ public:
   {
     is_complete_ = false;
     is_blocking_ = async;
+    type = 5;
   }
-  inline void execute() override {
+  inline void execute() {
     if(is_blocking_) {
       vex::task t(&flywheelTask, this);
     } else {
@@ -149,12 +153,13 @@ public:
   {
     is_complete_ = false;
     is_blocking_ = async;
+    type = 6;
   }
-  inline void execute() override {
+  inline void execute() {
     if(is_blocking_) {
-      vex::task t(&flywheelTask, this);
+      vex::task t(&indexerTask, this);
     } else {
-      flywheelTask(this);
+      indexerTask(this);
       is_complete_ = true;
     }
   }

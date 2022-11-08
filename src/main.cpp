@@ -17,14 +17,13 @@
 // BackRight            motor         15              
 // Flywheel             motor         13              
 // ---- END VEXCODE CONFIGURED DEVICES ----
-
 #include "vex.h"
 #include "xDrive.h"
 #include "Autonomous.h"
 
 using namespace vex;
 
-vex::competition Competition;
+competition Competition;
 
 controller::axis leftDriveAxis() { return Controller1.Axis3; }
 controller::axis rightDriveAxis() { return Controller1.Axis4; }
@@ -47,7 +46,7 @@ void run() {
     BackRight.stop();
   }
   //wait(100, msec);
-  vex::task::sleep(100);
+  task::sleep(100);
 }
 
 void teleop() {
@@ -55,15 +54,12 @@ void teleop() {
   while(true) run();
 }
 
-void auton() {
-  // Command queue
-  vector<Command> queue{};
-  // Commands to execute
-  queue.push_back(*(new DriveCommand(*new Comp_Vector(1.0, 0.0), 10.0, nullptr, true)));
-  queue.push_back(*(new TurnCommand(1.0, 10.0, &queue[0], false)));
 
-  // Execute all commands
-  execute(queue);  
+void auton() {
+  FlywheelCommand a(true, nullptr, false);
+  a.execute();
+  task::sleep(3000);
+  Flywheel.stop();
 }
 
 void auton_Skills() {
@@ -90,7 +86,7 @@ int main() {
   init();
 
   // Skills test
-  //Controller1.ButtonA.pressed(auton_Skills);
+  Controller1.ButtonA.pressed(auton);
 
   Competition.drivercontrol(teleop);
   Competition.autonomous([](){ auton(); });

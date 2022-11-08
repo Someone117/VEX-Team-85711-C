@@ -1,11 +1,7 @@
 #include "Autonomous.h"
-#include <algorithm>
-
-//TODO: CHANGE THE TURN STOPPING TO BE RADIANS INSTEAD OF LENGTH (CHANGE THE COUNt STUFF TOO)
-
 
 /* explanation:
-the c is nullptr if we don't need to wait, waits for the command if we need to
+c is nullptr if we don't need to wait, waits for the command if we need to
 */
 void waitForComplete(Command* c) {
   if(c == nullptr) return;
@@ -13,16 +9,6 @@ void waitForComplete(Command* c) {
     vex::task::sleep(50);
   }
 }
-
-/* explanation:
-execute all commands in the list
-*/
-void execute(vector<Command> cs) {
-  for(vector<Command>::iterator i = cs.begin(); i != cs.end(); ++i) {
-    (*i).execute();
-  }
-}
-
 
 /*explanation:
 Setup inital values of motors
@@ -196,6 +182,7 @@ int flywheelTask(void* args) {
   waitForComplete(f.wait_);
 
   if(f.on_) {
+    Flywheel.setVelocity(600, rpm);
     Flywheel.spin(vex::forward);
     if(f.is_blocking_) {
       int count = 0;
