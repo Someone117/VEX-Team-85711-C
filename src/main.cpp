@@ -16,6 +16,7 @@
 // BackLeft             motor         11              
 // BackRight            motor         15              
 // Flywheel             motor         13              
+// Intake               motor         12              
 // ---- END VEXCODE CONFIGURED DEVICES ----
 #include "vex.h"
 #include "xDrive.h"
@@ -45,7 +46,6 @@ void run() {
     BackLeft.stop();
     BackRight.stop();
   }
-  //wait(100, msec);
   task::sleep(100);
 }
 
@@ -56,10 +56,10 @@ void teleop() {
 
 
 void auton() {
+  // turn on flywheel for 3 sec
   FlywheelCommand a(true, nullptr, false);
-  a.execute();
   task::sleep(3000);
-  Flywheel.stop();
+  FlywheelCommand(false, nullptr, false);
 }
 
 void auton_Skills() {

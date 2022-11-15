@@ -1,7 +1,10 @@
 #include "Autonomous.h"
 
 /* explanation:
-c is nullptr if we don't need to wait, waits for the command if we need to
+if c is nullptr
+  We don't need to wait
+else 
+  Wait for the Command to complete
 */
 void waitForComplete(Command* c) {
   if(c == nullptr) return;
@@ -11,9 +14,10 @@ void waitForComplete(Command* c) {
 }
 
 /*explanation:
+Cast and dereference the pointer to the DriveCommand that we passed as args
+Wait for the indicated Command to execute
 Setup inital values of motors
 Setup differences, values that will hold the change in degrees of each motor
-Cast and dereference the pointer to the DriveCommand that we passed as args
 Set the motors to break (allows us to stop where we are without too much coasting due to momentum)
 Setup motor vectors (motor position with magnitude of 1)
 Calculate the time it will take to go the distance (used to stop loop from going infinitly):
@@ -58,7 +62,7 @@ int driveTask(void* args) {
   while(std::abs(RadiansToRotations(DegreesToRadians((v1+v2+v3+v4).get_mag()/4.0))) < d.length_) {
     if(count > times) break;
     drive(d.drive_vec_);
-    vex::task::sleep(100);
+    vex::task::sleep(50);
     d1 = FrontLeft.position(degrees)-FL;
     d2 = BackLeft.position(degrees)-BL;
     d3 = BackRight.position(degrees)-BR;
@@ -82,9 +86,10 @@ int driveTask(void* args) {
 }
 
 /*explanation:
+Cast and dereference the pointer to the DriveCommand that we passed as args
+Wait for the indicated Command to execute
 Setup inital values of motors
 Setup differences, values that will hold the change in degrees of each motor
-Cast and dereference the pointer to the DriveCommand that we passed as args
 Set the motors to break (allows us to stop where we are without too much coasting due to momentum)
 Calculate the distance the wheels will need to move to turn the given radians:
 radius of the robot * radians to turn
@@ -125,13 +130,12 @@ int turnTask(void* args) {
   while(std::abs(RadiansToRotations(DegreesToRadians(abs((d1+d2+d3+d4)/4.0)))) < distance) {
     if(count > times) break;
     turn(d.drive_);
+    vex::task::sleep(50);
     d1 = FrontLeft.position(degrees)-FL;
     d2 = BL-BackLeft.position(degrees);
     d3 = BackRight.position(degrees)-BR;
     d4 = FR-FrontRight.position(degrees);
-    count++;
-    vex::task::sleep(100);
-  }
+    count++;  }
   FrontLeft.stop();
   FrontRight.stop();
   BackLeft.stop();
@@ -144,70 +148,73 @@ int turnTask(void* args) {
   return 0;
 }
 
+/* explanation: 
+Cast and dereference the pointer to the IntakeCommand that we passed as args
+Wait for the indicated Command to execute
+Set the velocity of the intake to the value drive_, in percent
+Set the motor to spin the direction if drive_ 
+*/
 int intakeTask(void* args) {
   IntakeCommand* ip = static_cast<IntakeCommand*>(args);
   IntakeCommand i = *ip;
   waitForComplete(i.wait_);
 
+  Intake.setVelocity(std::abs(i.drive_),percent);
+  Intake.spin(i.drive_ > 0 ? vex::forward : vex::reverse);
+
   return 0;
 }
 
+/* explanation:
+Cast and dereference the pointer to the RollerCommand that we passed as args
+Wait for the indicated Command to execute
+Wait untill the roller has spun less than distance_, in degrees
+Stop the roller
+NOTE: the roller is connected to the same motor as the intake
+*/
 int rollerTask(void* args) {
   RollerCommand* rp = static_cast<RollerCommand*>(args);
   RollerCommand r = *rp;
   waitForComplete(r.wait_);
+
+  Intake.spin(vex::forward);
+  double ogPosition = Intake.position(degrees);
+  while(std::abs(Intake.position(degrees)- ogPosition) < r.distance_) {
+    vex::task::sleep(50);
+  }
+  Intake.stop();
   return 0;
 }
 
 
 /* explanation:
 Cast and dereference the pointer to the FlywheelCommand that we passed as args
-if the flywheel should be turned on {
-  start spinning it
-  if the flywheel should block the thread {
-    initialize a counter variable to track elapsed seconds
-    wait for the flyweel to spin up, or wait 3 seconds, whichever is shorter
-  }
-} else (AKA: flywheel should be turrned off) {
-  turn off the flywheel
-  if the flywheel should block the tread {
-    initialize a counter variable to track elapsed seconds
-    wait for the flyweel to spin down, or wait 4 seconds, whichever is shorter
-  }
-}
+Wait for the indicated Command to execute
+Start spinning the flywheel
+if the flywheel should block the thread
+  initialize a counter variable to track elapsed seconds
+  wait for the flyweel to spin up, or wait 3 seconds, whichever is shorter
 */
 int flywheelTask(void* args) {
   FlywheelCommand* fp = static_cast<FlywheelCommand*>(args);
   FlywheelCommand f = *fp;
   waitForComplete(f.wait_);
 
-  if(f.on_) {
-    Flywheel.setVelocity(600, rpm);
-    Flywheel.spin(vex::forward);
-    if(f.is_blocking_) {
-      int count = 0;
-      while(Flywheel.velocity(rpm) < 550) {
-        if(count > 30) return 1;
-        count++;
-        vex::task::sleep(100);
-      }
-    }
-  } else {
-    Flywheel.stop();
-    if(f.is_blocking_) {
-      int count = 0;
-      while(Flywheel.velocity(rpm) > 10) {
-        if(count > 4) return 1;
-        count++;
-        vex::task::sleep(100);
-      }
+  Flywheel.setVelocity(600, rpm);
+  Flywheel.spin(vex::forward);
+  if(f.is_blocking_) {
+    int count = 0;
+    while(Flywheel.velocity(rpm) < 550) {
+      if(count > 30) return 1;
+      count++;
+      vex::task::sleep(50);
     }
   }
   f.setComplete(true);
   return 0;
 }
 
-
+// TODO: Complete
 int indexerTask(void* args) {
   IndexerCommand* ip = static_cast<IndexerCommand*>(args);
   IndexerCommand i = *ip;
