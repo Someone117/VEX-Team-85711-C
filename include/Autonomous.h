@@ -47,6 +47,7 @@ class Command {
 public:
   bool is_complete_;
   bool is_blocking_;
+  thread main;
   Command(bool a, bool b) : is_complete_(a), is_blocking_(b) {}
   inline bool isComplete() {
     return is_complete_;
@@ -73,7 +74,7 @@ public:
   DriveCommand(Comp_Vector drive, double length, Command* wait, bool async) : Command(false, async), drive_vec_(drive), length_(length), wait_(wait)
   {
     if(async) {
-      vex::task t(&driveTask, this);
+      main = thread(&driveTask, this);
     } else {
       driveTask(this);
       is_complete_ = true;
@@ -95,7 +96,7 @@ public:
   TurnCommand(double drive_s, double radians, Command* wait, bool async) : Command(false, async), drive_(drive_s), radians_(radians), wait_(wait)
   {
     if(async) {
-      vex::task t(&turnTask, this);
+      main = thread(&turnTask, this);
     } else {
       turnTask(this);
       is_complete_ = true;
@@ -120,7 +121,7 @@ public:
     if(!on) {
       Intake.stop();
     } else if(async) {
-      vex::task t(&intakeTask, this);
+      main = thread(&intakeTask, this);
     } else {
       intakeTask(this);
       is_complete_ = true;
@@ -140,7 +141,7 @@ public:
   RollerCommand(double d, Command* wait, bool async) : Command(false, async), distance_(d), wait_(wait)
   {
     if(async) {
-      vex::task t(&rollerTask, this);
+      main = thread(&rollerTask, this);
     } else {
       rollerTask(this);
       is_complete_ = true;
@@ -163,7 +164,7 @@ public:
     if(!on) {
       Flywheel.stop();
     } else if(async) {
-      vex::task t(&flywheelTask, this);
+      main = thread(&flywheelTask, this);
     } else {
       flywheelTask(this);
       is_complete_ = true;
@@ -182,7 +183,7 @@ public:
   IndexerCommand(Command* wait, bool async) : Command(false, async), wait_(wait)
   {
     if(async) {
-      vex::task t(&indexerTask, this);
+      main = thread(&indexerTask, this);
     } else {
       indexerTask(this);
       is_complete_ = true;

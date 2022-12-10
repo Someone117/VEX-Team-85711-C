@@ -1,5 +1,7 @@
 #include "Autonomous.h"
 
+using namespace std;
+
 /* explanation:
 if c is nullptr
   We don't need to wait
@@ -8,9 +10,7 @@ else
 */
 void waitForComplete(Command* c) {
   if(c == nullptr) return;
-  while(!(*c).isComplete()) {
-    vex::task::sleep(50);
-  }
+  (*c).main.join();
 }
 
 /*explanation:
@@ -57,12 +57,12 @@ int driveTask(void* args) {
   // might need to check
   double speed = 200.0 * d.drive_vec_.get_mag() / 100.0;
   double time = speed * 1.25 * d.length_ / 60.0;
-  double times = time * 10.0;
+  double times = time * 20.0;
   int count = 0;
-  while(std::abs(RadiansToRotations(DegreesToRadians((v1+v2+v3+v4).get_mag()/4.0))) < d.length_) {
+  do {
     if(count > times) break;
-    drive(d.drive_vec_);
-    vex::task::sleep(50);
+    drive(d.drive_vec_, false);
+    this_thread::sleep_for(50);
     d1 = FrontLeft.position(degrees)-FL;
     d2 = BackLeft.position(degrees)-BL;
     d3 = BackRight.position(degrees)-BR;
@@ -72,7 +72,7 @@ int driveTask(void* args) {
     v3.set_mag(d3);
     v4.set_mag(d4);
     count++;
-  }
+  } while(abs(RadiansToRotations(DegreesToRadians((v1+v2+v3+v4).get_mag()/4.0))) < d.length_);
   FrontLeft.stop();
   FrontRight.stop();
   BackLeft.stop();
@@ -109,10 +109,10 @@ int turnTask(void* args) {
   TurnCommand d = *dp;
   waitForComplete(d.wait_);
   
-  double FL = FrontLeft.position(degrees);
-  double BL = BackLeft.position(degrees);
-  double BR = BackRight.position(degrees);
-  double FR = FrontRight.position(degrees);
+  const double FL = FrontLeft.position(degrees);
+  const double BL = BackLeft.position(degrees);
+  const double BR = BackRight.position(degrees);
+  const double FR = FrontRight.position(degrees);
   double d1 = 0;
   double d2 = 0;
   double d3 = 0;
@@ -123,19 +123,20 @@ int turnTask(void* args) {
   BackRight.setStopping(brake);
 
   double distance = d.radians_ * robotRadius();
-  double speed = 200.0 * std::abs(d.drive_);
+  double speed = 200.0 * abs(d.drive_);
   double time = speed * distance / 60.0;
-  double times = time * 10.0 * 1.25;
+  double times = time * 20.0 * 1.25;
   int count = 0;
-  while(std::abs(RadiansToRotations(DegreesToRadians(abs((d1+d2+d3+d4)/4.0)))) < distance) {
+  while(abs(RadiansToRotations(DegreesToRadians(abs((d1+d2+d3+d4)/4.0)))) < distance) {
     if(count > times) break;
     turn(d.drive_);
-    vex::task::sleep(50);
+    this_thread::sleep_for(50);
     d1 = FrontLeft.position(degrees)-FL;
     d2 = BL-BackLeft.position(degrees);
     d3 = BackRight.position(degrees)-BR;
     d4 = FR-FrontRight.position(degrees);
-    count++;  }
+    count++;  
+  }
   FrontLeft.stop();
   FrontRight.stop();
   BackLeft.stop();
@@ -159,7 +160,7 @@ int intakeTask(void* args) {
   IntakeCommand i = *ip;
   waitForComplete(i.wait_);
 
-  Intake.setVelocity(std::abs(i.drive_),percent);
+  Intake.setVelocity(abs(i.drive_), percent);
   Intake.spin(i.drive_ > 0 ? vex::forward : vex::reverse);
 
   return 0;
@@ -179,8 +180,8 @@ int rollerTask(void* args) {
 
   Intake.spin(vex::forward);
   double ogPosition = Intake.position(degrees);
-  while(std::abs(Intake.position(degrees)- ogPosition) < r.distance_) {
-    vex::task::sleep(50);
+  while(abs(Intake.position(degrees)- ogPosition) < r.distance_) {
+    this_thread::sleep_for(50);
   }
   Intake.stop();
   return 0;
@@ -207,18 +208,20 @@ int flywheelTask(void* args) {
     while(Flywheel.velocity(rpm) < 550) {
       if(count > 30) return 1;
       count++;
-      vex::task::sleep(50);
+      this_thread::sleep_for(50);
     }
   }
   f.setComplete(true);
   return 0;
 }
 
-// TODO: Complete
 int indexerTask(void* args) {
   IndexerCommand* ip = static_cast<IndexerCommand*>(args);
   IndexerCommand i = *ip;
   waitForComplete(i.wait_);
+
+  Indexer.spinFor(vex::reverse, 90, degrees);
+  Indexer.spinFor(vex::forward, 90,degrees);
   
   return 0;
 }

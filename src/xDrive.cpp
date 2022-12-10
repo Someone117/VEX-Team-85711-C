@@ -9,10 +9,29 @@ double map(double x, double in_min, double in_max, double out_min, double out_ma
 }
 
 /*
+Stops the Robot drive
+*/
+void stopDrive() {
+  FrontLeft.stop();
+  FrontRight.stop();
+  BackLeft.stop();
+  BackRight.stop();
+}
+
+
+/*
 Turns the Robot
 @param v the magnitude of v is the speed, in percent and the directon of v is the direction to turn
 */
 void turn(double v) {
+  if(std::abs(v) < 15) {
+    FrontLeft.stop();
+    FrontRight.stop();
+    BackLeft.stop();
+    BackRight.stop();
+    return;
+  }
+  
   bool FL = v > 0;
   bool FR = v > 0;
   bool BL = v > 0;
@@ -33,10 +52,19 @@ void turn(double v) {
 Drives the robot
 @param driveVec a vector where the magnitude is between 0 and 1, designating the speed to drive at, and the angle is the angle to drive at
 */
-void drive(Comp_Vector driveVec) {
-  Comp_Vector drive2(driveVec.get_x(), driveVec.get_y());
-  driveVec.rotate(-M_PI/4.0);
+void drive(Comp_Vector driveVec, bool flipDrive) {
+  if(driveVec.get_mag() < 15) {
+    FrontLeft.stop();
+    FrontRight.stop();
+    BackLeft.stop();
+    BackRight.stop();
+    return;
+  }
   
+  Comp_Vector drive2(driveVec.get_x(), driveVec.get_y());
+  driveVec.rotate(M_PI/4.0);
+  if(flipDrive) driveVec.rotate(M_PI);
+
   bool FL = 0;
   bool FR = 0;
   bool BL = 0;
