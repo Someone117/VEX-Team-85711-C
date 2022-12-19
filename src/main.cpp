@@ -32,6 +32,17 @@ controller::axis leftDriveAxis() { return Controller1.Axis3; }
 controller::axis rightDriveAxis() { return Controller1.Axis4; }
 controller::axis turnAxis() { return Controller1.Axis1; }
 
+void index_forward(){
+  Indexer.spin(vex::forward);
+  this_thread::sleep_for(250);
+  Indexer.stop();
+}
+
+void index_backward(){
+  Indexer.spin(reverse);
+  this_thread::sleep_for(250);
+  Indexer.stop();
+}
 
 // we may want to make it not get stuck accedentally
 int indexerTasks() {
@@ -49,15 +60,11 @@ int indexerTasks() {
     // }
     
     if(Controller1.ButtonR1.pressing() && !ret) {
-      Indexer.spin(reverse);
-      this_thread::sleep_for(250);
-      Indexer.stop();
+      index_backward();
       ret = true;
       this_thread::sleep_for(200);
     } else if(ret) {
-      Indexer.spin(vex::forward);
-      this_thread::sleep_for(250);
-      Indexer.stop();
+      index_forward(); 
       ret = false;
     }
     if(Controller1.ButtonDown.pressing()) {
@@ -152,22 +159,41 @@ void teleop() {
 }
 
 enum autons {
-  BLUE_L,
-  BLUE_R,
-  RED_L,
-  RED_R,
+  L, 
+  R,
   DISABLED
 };
 
 void auton(autons aut) {
   if(aut == DISABLED) return;
+  Flywheel.spin(vex::forward); 
+
+  //Drives into and rolls the close roller
   Comp_Vector a(-50, 0);
   drive(a, false);
   this_thread::sleep_for(500);
   stopDrive();
-  Intake.spin(aut == BLUE_L ? vex::reverse : vex::forward, 70, percent);
+  Intake.spin(vex::reverse, 70, percent);
   this_thread::sleep_for(250);
-  Intake.stop();
+  Intake.stop(); 
+
+  //gets of the roller to position and shoots
+  a.set_mag(a.get_mag()*-1);
+  drive(a, false);
+  this_thread::sleep_for(500);
+  for(int i = 0; i < 2; i++){
+    index_forward();
+    index_backward();
+  }
+  Flywheel.stop();
+  
+  // should uno reverse and drive into the other roller backwards 
+  Mag_Vector b(-50, 3*M_PI/4); 
+  drive(b, false);
+  this_thread::sleep_for(4000); 
+  Intake.spin(vex::reverse, 70, percent);
+  this_thread::sleep_for(250);
+  Intake.stop(); 
 }
 
 void auton_Skills() {
@@ -183,6 +209,6 @@ int main() {
   // Skills test
   //Controller1.ButtonA.pressed(auton);
 
-  Competition.autonomous([](){ auton(BLUE_L); });
+  Competition.autonomous([](){ auton(L); });
   Competition.drivercontrol(teleop);
 }
