@@ -19,7 +19,7 @@
 
 #define waitUntil(condition)                                                   \
   do {                                                                         \
-    vex::task::sleep(5);                                                             \
+    this_thread::sleep(5);                                                             \
   } while (!(condition))
 
 #define repeat(iterations)                                                     \

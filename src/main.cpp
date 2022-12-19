@@ -28,14 +28,15 @@ using namespace vex;
 
 competition Competition;
 
-controller::axis leftDriveAxis() { return Controller1.Axis3; }
-controller::axis rightDriveAxis() { return Controller1.Axis4; }
+controller::axis upDownAxis() { return Controller1.Axis3; }
+controller::axis leftRightAxis() { return Controller1.Axis4; }
 controller::axis turnAxis() { return Controller1.Axis1; }
 
 void index_forward(){
   Indexer.spin(vex::forward);
   this_thread::sleep_for(250);
   Indexer.stop();
+  this_thread::sleep_for(200);
 }
 
 void index_backward(){
@@ -47,39 +48,59 @@ void index_backward(){
 // we may want to make it not get stuck accedentally
 int indexerTasks() {
   bool ret = false;
+  bool ret1 = false;
   while(true) {
-    // Indexer.setVelocity(80, percent);
-    // if(Controller1.ButtonR1.pressing()) {
-    //   Indexer.spin(reverse);
-    //   this_thread::sleep_for(150);
-    //   Indexer.stop();
-    // } else if(Controller1.ButtonR2.pressing()) {
-    //   Indexer.spin(vex::forward);
-    //   this_thread::sleep_for(150);
-    //   Indexer.stop();
-    // }
-    
     if(Controller1.ButtonR1.pressing() && !ret) {
       index_backward();
       ret = true;
-      this_thread::sleep_for(200);
     } else if(ret) {
       index_forward(); 
       ret = false;
     }
     if(Controller1.ButtonDown.pressing()) {
-      EndGame.setVelocity(100, percent);
-      EndGame.spinFor(130, degrees);
+      if(ret1) {
+        //TODO: CKECK AND MAKE BETTER ENDGAME
+        EndGame.spinFor(vex::reverse, 130, degrees);
+        ret1 = false;
+      } else {
+        EndGame.spinFor(vex::forward, 130, degrees);
+        ret1 = true;
+      }
     }
-
     this_thread::sleep_for(50);
+  }
+  return 1;
+}
+
+int flywheelTasks() {
+  bool fly = true;
+  bool fly1 = false;
+  while(true) {
+    if(Controller1.ButtonUp.pressing()) {
+      if(fly) {
+        Flywheel.stop();
+        fly = false;
+        this_thread::sleep_for(100);
+      } else {
+        Flywheel.spin(vex::forward);
+        fly = true;
+        this_thread::sleep_for(100);
+      }
+    } else if(Controller1.ButtonA.pressing()) {
+      if(fly1) {
+        Flywheel.setVelocity(475, rpm);
+      } else {
+        Flywheel.setVelocity(415, rpm);
+      }
+      
+    }
   }
   return 1;
 }
 
 void run(bool flipDrive) {
   double deadZone = 15;
-  Comp_Vector driveVec(abs(leftDriveAxis().position()) > deadZone ? leftDriveAxis().position() : 0, abs(rightDriveAxis().position()) > deadZone ? -rightDriveAxis().position() : 0);
+  Comp_Vector driveVec(abs(upDownAxis().position()) > deadZone ? upDownAxis().position() : 0, abs(leftRightAxis().position()) > deadZone ? -leftRightAxis().position() : 0);
   double turnAmt = turnAxis().position();
   if(abs(turnAmt) > deadZone || driveVec.get_mag() > deadZone) {
     if(driveVec.get_mag() > abs(turnAmt)) {
@@ -90,7 +111,6 @@ void run(bool flipDrive) {
   } else {
     stopDrive();
   }
-
   if(Controller1.ButtonL2.pressing()) {
     //Intake.setVelocity(100, percent);
     //Intake.spin(vex::forward);
@@ -126,6 +146,9 @@ void init() {
   
   Intake.setStopping(brake);
 
+  EndGame.setVelocity(100, percent);
+
+
   stopDrive();
 }
 
@@ -135,25 +158,11 @@ void teleop() {
   stopDrive();
   thread indexer_thread(indexerTasks);
   bool flip = false;
-  bool fly = true;
   while(true) {
     run(flip);
     if(Controller1.ButtonX.pressing()) {
       flip= !flip;
-      this_thread::sleep_for(100);
     }
-    if(Controller1.ButtonUp.pressing()) {
-    if(fly) {
-      Flywheel.stop();
-      fly = false;
-      this_thread::sleep_for(100);
-
-    } else {
-      Flywheel.spin(vex::forward);
-      fly = true;
-      this_thread::sleep_for(100);
-    }
-  }
   }
   thread::interruptAll();
 }
@@ -161,11 +170,15 @@ void teleop() {
 enum autons {
   L, 
   R,
+  SKILLS,
   DISABLED
 };
 
-void auton(autons aut) {
-  if(aut == DISABLED) return;
+void auton_skills() {
+
+}
+
+void auton_left() {
   Flywheel.spin(vex::forward); 
 
   //Drives into and rolls the close roller
@@ -177,7 +190,7 @@ void auton(autons aut) {
   this_thread::sleep_for(250);
   Intake.stop(); 
 
-  //gets of the roller to position and shoots
+  //gets off the roller to position and shoots
   a.set_mag(a.get_mag()*-1);
   drive(a, false);
   this_thread::sleep_for(500);
@@ -187,17 +200,48 @@ void auton(autons aut) {
   }
   Flywheel.stop();
   
-  // should uno reverse and drive into the other roller backwards 
-  Mag_Vector b(-50, 3*M_PI/4); 
-  drive(b, false);
-  this_thread::sleep_for(4000); 
+  // should uno reverse and drive into the other roller backwards
+  turn(-50);
+  this_thread::sleep_for(500);
+  drive(a, false);
+  this_thread::sleep_for(750);
+  stopDrive();
   Intake.spin(vex::reverse, 70, percent);
   this_thread::sleep_for(250);
   Intake.stop(); 
 }
 
-void auton_Skills() {
+void auton_right() {
+  Flywheel.spin(vex::forward); 
 
+  // drive left
+  Comp_Vector a(-50, 0);
+  Comp_Vector b(0, -50);
+  drive(b, false);
+  this_thread::sleep_for(500);
+  stopDrive();
+  // drive backwards and spin roller
+  drive(a, false);
+  this_thread::sleep_for(500);
+  stopDrive();
+  Intake.spin(vex::reverse, 70, percent);
+  this_thread::sleep_for(250);
+  Intake.stop();
+  // shoot twice
+  for(int i = 0; i < 2; i++){
+    index_forward();
+    index_backward();
+  }
+  Flywheel.stop();
+}
+
+void auton(autons aut) {
+  switch(aut) {
+    case L: auton_left();
+    case R: auton_right();
+    case SKILLS: auton_skills();
+    case DISABLED:;
+  }
 }
 
 int main() {
