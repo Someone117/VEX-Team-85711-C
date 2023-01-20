@@ -32,58 +32,15 @@ controller::axis upDownAxis() { return Controller1.Axis3; }
 controller::axis leftRightAxis() { return Controller1.Axis4; }
 controller::axis turnAxis() { return Controller1.Axis1; }
 
-int indexerTasks() {
-  bool ret = false; // does the endgame need to return, or trigger
-  while (true) {
-    if (Controller1.ButtonR1.pressing() &&
-        !Indexer.isSpinning()) { // If the indexer finished, start it spinning
-      Indexer.startSpinFor(vex::reverse, 360, deg);
-    }
-    if (Controller1.ButtonDown.pressing()) {
-      if (!EndGame.isSpinning()) {
-        if (ret) {
-          EndGame.startSpinFor(vex::reverse, 130, degrees);
-          ret = false;
-        } else {
-          EndGame.startSpinFor(vex::forward, 130, degrees);
-          ret = true;
-        }
-      }
-    }
-    this_thread::sleep_for(50);
-  }
-  return 1;
-}
-
-int flywheelTasks() {
-  bool fly = true;                // should flywheel be spinning
-  bool flyWheelSpinState = true; // which velocity should it be spinning at
-  while (true) {
-    if (Controller1.ButtonUp.pressing()) {
-      if (fly) {
-        Flywheel.stop();
-        fly = false;
-      } else {
-        Flywheel.spin(vex::forward);
-        fly = true;
-      }
-    } else if (Controller1.ButtonA.pressing()) {
-      if (flyWheelSpinState) {
-        Flywheel.setVelocity(475, rpm);
-      } else {
-        Flywheel.setVelocity(415, rpm); // default
-      }
-    }
-    this_thread::sleep_for(100);
-  }
-  return 1;
-}
-
-void run(bool flipDrive) { // drive and intake
-  double deadZone = 15;    // prevents drifting
+void run(bool flipDrive) { // does everything
+  // Driving
+  double deadZone = 15; // prevents drifting
   Comp_Vector driveVec(
       abs(upDownAxis().position()) > deadZone ? upDownAxis().position() : 0,
-      abs(leftRightAxis().position()) > deadZone ? -leftRightAxis().position() : 0); // snap to 0 if any individual axis is in the deadzone
+      abs(leftRightAxis().position()) > deadZone
+          ? -leftRightAxis().position()
+          : 0); // snap to 0 if any individual axis is in the deadzone
+  // turning
   double turnAmt = turnAxis().position();
   if (std::abs(turnAmt) > deadZone ||
       driveVec.get_mag() > deadZone) { // are we outside the deadzone
@@ -97,6 +54,7 @@ void run(bool flipDrive) { // drive and intake
     stopDrive();
   }
 
+  // Intake and Rollers
   if (Controller1.ButtonL2.pressing()) { // spin intake in
     Intake.setVelocity(100, percent);
     Intake.spin(vex::forward);
@@ -109,6 +67,30 @@ void run(bool flipDrive) { // drive and intake
   } else {
     Intake.stop();
   }
+
+  // Indexer
+  if (Controller1.ButtonR1.pressing() &&
+      !Indexer.isSpinning()) { // If the indexer finished, start it spinning
+    Indexer.startSpinFor(vex::reverse, 360, deg);
+  }
+
+  // Flywheel
+  if (Controller1.ButtonUp.pressing()) {
+    // Flywheel toggle
+    if (Flywheel.isSpinning()) {
+      Flywheel.stop();
+    } else {
+      Flywheel.spin(vex::forward);
+    }
+  } else if (Controller1.ButtonA.pressing()) {
+    // Change flywheel speed
+    if (Flywheel.velocity(rpm) > 420 && Flywheel.isSpinning()) { // test
+      Flywheel.setVelocity(475, rpm);
+    } else {
+      Flywheel.setVelocity(415, rpm); // default
+    }
+  }
+
   this_thread::sleep_for(50);
 }
 
@@ -139,12 +121,28 @@ void teleop() {
   init();
   Flywheel.spin(vex::forward); // start flywheel
   stopDrive();
-  thread indexer_thread(indexerTasks); // enable the indexer
-  bool flip = false;                   // should we reverse the drive
+  bool flip = false;          // should we reverse the drive
+  bool endGameReturn = false; // should we enable or disable the endgame
   while (true) {
+    // Drive, Flywheel, intake and indexer
     run(flip);
+
+    // Drive inversion
     if (Controller1.ButtonX.pressing()) {
       flip = !flip;
+    }
+
+    // Endgame
+    if (Controller1.ButtonDown.pressing()) {
+      if (!EndGame.isSpinning()) {
+        if (endGameReturn) {
+          EndGame.startSpinFor(vex::reverse, 130, degrees);
+          endGameReturn = false;
+        } else {
+          EndGame.startSpinFor(vex::forward, 130, degrees);
+          endGameReturn = true;
+        }
+      }
     }
   }
   thread::interruptAll();
@@ -159,6 +157,6 @@ int main() {
   // Skills test
   // Controller1.ButtonA.pressed(auton);
 
-  Competition.autonomous([]() { auton(L); });
+  Competition.autonomous([]() { auton(L); }); // Which auton to do
   Competition.drivercontrol(teleop);
 }
