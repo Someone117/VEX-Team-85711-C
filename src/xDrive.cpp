@@ -58,15 +58,12 @@ speed to drive at, and the angle is the angle to drive at
 */
 void drive(Comp_Vector driveVec, bool flipDrive) {
   if (driveVec.get_mag() < 15) {
-    FrontLeft.stop();
-    FrontRight.stop();
-    BackLeft.stop();
-    BackRight.stop();
+    stopDrive();
     return;
   }
 
   Comp_Vector drive2(driveVec.get_x(), driveVec.get_y());
-  driveVec.rotate(M_PI / 4.0);
+  driveVec.rotate(M_PI / 4.0); // may need to be * -1
   if (flipDrive)
     driveVec.rotate(M_PI);
 

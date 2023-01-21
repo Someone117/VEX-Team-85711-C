@@ -61,9 +61,6 @@ void run(bool flipDrive) { // does everything
   } else if (Controller1.ButtonR2.pressing()) { // spin intake out
     Intake.setVelocity(100, percent);
     Intake.spin(vex::reverse);
-  } else if (Controller1.ButtonL2.pressing()) { // spin rollers
-    Intake.setVelocity(70, percent);
-    Intake.spin(vex::reverse);
   } else {
     Intake.stop();
   }
@@ -75,20 +72,22 @@ void run(bool flipDrive) { // does everything
   }
 
   // Flywheel
-  if (Controller1.ButtonUp.pressing()) {
+  if (Controller1.ButtonLeft.pressing()) {
     // Flywheel toggle
-    if (Flywheel.isSpinning()) {
+    if (Flywheel.velocity(rpm) > 100) {
       Flywheel.stop();
     } else {
       Flywheel.spin(vex::forward);
     }
-  } else if (Controller1.ButtonA.pressing()) {
+    this_thread::sleep_for(50);
+  } else if (Controller1.ButtonUp.pressing()) {
     // Change flywheel speed
-    if (Flywheel.velocity(rpm) > 420 && Flywheel.isSpinning()) { // test
+    if (Flywheel.velocity(rpm) < 440) { // test
       Flywheel.setVelocity(475, rpm);
     } else {
       Flywheel.setVelocity(415, rpm); // default
     }
+    this_thread::sleep_for(50);
   }
 
   this_thread::sleep_for(50);
@@ -107,7 +106,7 @@ void init() { // init all torque, velocity and breaking
   Flywheel.setStopping(coast);
   Flywheel.setVelocity(415, rpm);
 
-  Indexer.setStopping(brake);
+  Indexer.setStopping(hold);
   Indexer.setVelocity(50, percent);
 
   Intake.setStopping(brake);
@@ -122,26 +121,21 @@ void teleop() {
   Flywheel.spin(vex::forward); // start flywheel
   stopDrive();
   bool flip = false;          // should we reverse the drive
-  bool endGameReturn = false; // should we enable or disable the endgame
+  bool endGameReturn = false; // did we activate the endgame?
   while (true) {
     // Drive, Flywheel, intake and indexer
     run(flip);
 
     // Drive inversion
-    if (Controller1.ButtonX.pressing()) {
+    if (Controller1.ButtonB.pressing()) {
       flip = !flip;
     }
 
     // Endgame
-    if (Controller1.ButtonDown.pressing()) {
-      if (!EndGame.isSpinning()) {
-        if (endGameReturn) {
-          EndGame.startSpinFor(vex::reverse, 130, degrees);
-          endGameReturn = false;
-        } else {
-          EndGame.startSpinFor(vex::forward, 130, degrees);
-          endGameReturn = true;
-        }
+    if (Controller1.ButtonY.pressing()) {
+      if (endGameReturn) {
+        EndGame.startSpinFor(vex::reverse, 130, degrees);
+        endGameReturn = false;
       }
     }
   }

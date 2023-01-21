@@ -50,6 +50,7 @@ void auton_right() {
   // drive left
   Comp_Vector a(-50, 0);
   Comp_Vector b(0, -50);
+  // drive left to get to roller
   drive(b, false);
   this_thread::sleep_for(500);
   stopDrive();
@@ -65,6 +66,29 @@ void auton_right() {
   index();
   index();
   Flywheel.stop();
+}
+
+void auton_left_simple() {
+  Flywheel.setVelocity(100, percent);
+  Flywheel.spin(vex::forward);
+  // back into roller
+  Comp_Vector a(-50, 0);
+  drive(a, false);
+  this_thread::sleep_for(500);
+  stopDrive();
+
+  // roller
+  Intake.spin(vex::reverse, 100, percent);
+  this_thread::sleep_for(250);
+  Intake.stop();
+  this_thread::sleep_for(5000);
+  index();
+  index();
+  index();
+  index();
+  index();
+  Flywheel.stop();
+
 }
 
 void auton(autons aut) { // choose which auton
