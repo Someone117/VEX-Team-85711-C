@@ -8,10 +8,10 @@ extern motor FrontLeft;
 extern motor FrontRight;
 extern motor BackLeft;
 extern motor BackRight;
-extern motor Indexer;
 extern motor Intake;
-extern motor Flywheel;
-extern motor EndGame;
+extern motor Cata;
+extern motor TopLeft;
+extern motor TopRight;
 
 /**
  * Used to initialize code/tasks/devices added using tools in VEXcode Pro.

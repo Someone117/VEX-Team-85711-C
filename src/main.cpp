@@ -2,15 +2,16 @@
 // Robot Configuration:
 // [Name]               [Type]        [Port(s)]
 // Controller1          controller
-// FrontLeft            motor         9
+// FrontLeft            motor         6
 // FrontRight           motor         3
 // BackLeft             motor         1
 // BackRight            motor         2
-// Indexer              motor         18
 // Intake               motor         16
-// Flywheel             motor         10
-// EndGame              motor         8
+// Cata                 motor         8
+// TopLeft              motor         4
+// TopRight             motor         5
 // ---- END VEXCODE CONFIGURED DEVICES ----
+
 /*----------------------------------------------------------------------------*/
 /*                                                                            */
 /*    Module:       main.cpp                                                  */
@@ -19,39 +20,38 @@
 /*    Description:  V5 project                                                */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
+
 #include "autonomous.h"
+#include "tankDrive.h"
 #include "vex.h"
-#include "xDrive.h"
+
 
 using namespace vex;
 using namespace std;
 
 competition Competition;
 
-controller::axis upDownAxis() { return Controller1.Axis3; }
-controller::axis leftRightAxis() { return Controller1.Axis4; }
+controller::axis driveAxis() { return Controller1.Axis3; }
 controller::axis turnAxis() { return Controller1.Axis1; }
 
 void run(bool flipDrive) { // does everything
   // Driving
   double deadZone = 15; // prevents drifting
-  Comp_Vector driveVec(
-      abs(upDownAxis().position()) > deadZone ? upDownAxis().position() : 0,
-      abs(leftRightAxis().position()) > deadZone
-          ? -leftRightAxis().position()
-          : 0); // snap to 0 if any individual axis is in the deadzone
+  double driveAmt = driveAxis().position();
   // turning
   double turnAmt = turnAxis().position();
-  if (std::abs(turnAmt) > deadZone ||
-      driveVec.get_mag() > deadZone) { // are we outside the deadzone
-    if (driveVec.get_mag() > std::abs(turnAmt)) {
-      drive(driveVec.get_mag() > deadZone ? driveVec : Comp_Vector(0, 0),
-            flipDrive);
+  if (std::abs(driveAmt) > std::abs(turnAmt)) {
+    if(abs(driveAmt) > deadZone) {
+      drive(driveAmt, flipDrive);
     } else {
-      turn(std::abs(turnAmt) > deadZone ? turnAmt : 0);
+      stopDrive();
     }
   } else {
-    stopDrive();
+    if(abs(turnAmt) > deadZone) {
+      turn(turnAmt, flipDrive);
+    } else {
+      stopDrive();
+    }
   }
 
   // Intake and Rollers
@@ -65,31 +65,7 @@ void run(bool flipDrive) { // does everything
     Intake.stop();
   }
 
-  // Indexer
-  if (Controller1.ButtonR1.pressing() &&
-      !Indexer.isSpinning()) { // If the indexer finished, start it spinning
-    Indexer.startSpinFor(vex::reverse, 360, deg);
-  }
-
-  // Flywheel
-  if (Controller1.ButtonLeft.pressing()) {
-    // Flywheel toggle
-    if (Flywheel.velocity(rpm) > 100) {
-      Flywheel.stop();
-    } else {
-      Flywheel.spin(vex::forward);
-    }
-    this_thread::sleep_for(50);
-  } else if (Controller1.ButtonUp.pressing()) {
-    // Change flywheel speed
-    if (Flywheel.velocity(rpm) < 440) { // test
-      Flywheel.setVelocity(475, rpm);
-    } else {
-      Flywheel.setVelocity(415, rpm); // default
-    }
-    this_thread::sleep_for(50);
-  }
-
+  //Cata
   this_thread::sleep_for(50);
 }
 
@@ -102,26 +78,24 @@ void init() { // init all torque, velocity and breaking
   BackLeft.setStopping(brake);
   BackRight.setMaxTorque(100, percent);
   BackRight.setStopping(brake);
-
-  Flywheel.setStopping(coast);
-  Flywheel.setVelocity(415, rpm);
-
-  Indexer.setStopping(hold);
-  Indexer.setVelocity(50, percent);
-
+  TopRight.setMaxTorque(100, percent);
+  TopLeft.setMaxTorque(100, percent);
+  TopLeft.setStopping(brake);
+  TopRight.setStopping(brake);
   Intake.setStopping(brake);
 
-  EndGame.setVelocity(100, percent);
+  Cata.setVelocity(100, percent);
+  Cata.setStopping(hold);
 
   stopDrive(); // safety
 }
 
 void teleop() {
   init();
-  Flywheel.spin(vex::forward); // start flywheel
+  // need to start cata
   stopDrive();
-  bool flip = false;          // should we reverse the drive
-  bool endGameReturn = false; // did we activate the endgame?
+  bool flip = false; // should we reverse the drive
+  // bool endGameReturn = false; // did we activate the endgame?
   while (true) {
     // Drive, Flywheel, intake and indexer
     run(flip);
@@ -129,15 +103,18 @@ void teleop() {
     // Drive inversion
     if (Controller1.ButtonB.pressing()) {
       flip = !flip;
+      this_thread::sleep_for(100);
     }
-
+    if (flip) {
+      Controller1.rumble("-");
+    }
     // Endgame
-    if (Controller1.ButtonY.pressing()) {
-      if (endGameReturn) {
-        EndGame.startSpinFor(vex::reverse, 130, degrees);
-        endGameReturn = false;
-      }
-    }
+    // if (Controller1.ButtonY.pressing()) {
+    //   if (endGameReturn) {
+    //     EndGame.startSpinFor(vex::reverse, 130, degrees);
+    //     endGameReturn = false;
+    //   }
+    // }
   }
   thread::interruptAll();
 }
@@ -151,6 +128,6 @@ int main() {
   // Skills test
   // Controller1.ButtonA.pressed(auton);
 
-  Competition.autonomous([]() { auton(L); }); // Which auton to do
+  Competition.autonomous([]() { auton(L_SIMPLE); }); // Which auton to do
   Competition.drivercontrol(teleop);
 }
