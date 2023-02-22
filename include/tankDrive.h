@@ -2,10 +2,10 @@
 #include "Math_Vector.h"
 
 void stopDrive();
-void turn(double v, bool flipDrive);
+void turn(double v);
 void drive(double v, bool flipDrive);
-double logDrive(double v, int pow);
-inline int getLogPower() { return 3; }
-// testing
-void driveEncode(double v, double distance);
-void turnEncode(double v, double distance);
+void driveAndTurn(double d, double t, bool flipDrive);
+double logDrive(double v, double pow);
+
+void driveFor(double voltage, double distance);
+void turnFor(double voltage, double distance);

@@ -3,7 +3,6 @@
 #include <sstream>
 #include <string>
 
-
 class Comp_Vector {
 private:
   double x, y, angle, mag;
