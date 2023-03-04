@@ -9,13 +9,13 @@ brain Brain;
 
 // VEXcode device constructors
 controller Controller1 = controller(primary);
-motor BottomLeft = motor(PORT4, ratio6_1, true);
-motor BottomRight = motor(PORT6, ratio6_1, false);
-motor BackLeft = motor(PORT10, ratio6_1, true);
-motor BackRight = motor(PORT1, ratio6_1, false);
-motor Intake = motor(PORT8, ratio18_1, false);
-motor Cata = motor(PORT14, ratio36_1, false);
-motor TopLeft = motor(PORT12, ratio6_1, false);
+motor BottomLeft = motor(PORT9, ratio6_1, true);
+motor BottomRight = motor(PORT13, ratio6_1, false);
+motor BackLeft = motor(PORT15, ratio6_1, true);
+motor BackRight = motor(PORT16, ratio6_1, false);
+motor Intake = motor(PORT19, ratio18_1, false);
+motor Cata = motor(PORT20, ratio36_1, false);
+motor TopLeft = motor(PORT4, ratio6_1, false);
 motor TopRight = motor(PORT7, ratio6_1, true);
 limit CataSW = limit(Brain.ThreeWirePort.A);
 motor_group LeftDrive = motor_group(BottomLeft, TopLeft, BackLeft);
