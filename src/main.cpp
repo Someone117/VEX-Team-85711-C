@@ -82,6 +82,8 @@ void teleop() {
   bool enableIntake = true;
   bool intakeOverride = false;
   double cataVoltage = 10;
+
+  double startTime = Brain.Timer.value();
   while (true) {
     // Drive/turn
     run(flip);
@@ -115,6 +117,13 @@ void teleop() {
       Intake.spin(vex::reverse);
     } else {
       Intake.stop();
+    }
+
+    if(Controller1.ButtonY.pressing() 
+       && ((Brain.Timer.value() - startTime) > 95)
+      ) {
+      LeftEndGame.set(true);
+      RightEndGame.set(true);
     }
 
     // Drive inversion

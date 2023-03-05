@@ -1,8 +1,5 @@
 #include "autonomous.h"
-#include "robot-config.cpp"
 #include "tankDrive.h"
-#include "vex.h"
-
 
 void auton_skills() {
   drive(-75, false);
