@@ -1,7 +1,12 @@
 #include "autonomous.h"
 #include "tankDrive.h"
 #include "vex.h"
+#include "robot-config.cpp"
 
+float wheel_diameter = 3.25f;
+motor_group parent = LeftDrive;
+motor_group child = RightDrive; 
+int encoder_ticks = 300;
 
 void auton_skills() {
   drive(-75, false);
@@ -102,6 +107,86 @@ void auton_right() {
 }
 
 void auton_left_simple() {}
+
+
+
+
+
+// this function finds a similar speed for the motorgroups
+void auto_drive(int speed, double c){
+  float diff = fabs(parent.rotation(rev)) - fabs(child.rotation(rev));
+  int sign = diff < 0 ? -1 : 1; 
+  int dV = sign*(diff)*speed*c; // c is a constant that needs tuning
+
+  parent.spin(forward, speed, rpm);
+  child.spin(forward, speed + dV, rpm);
+}
+
+void auto_drive_dist(int speed, int dist){
+  // reseting the rotation vals to 0
+  parent.resetRotation();
+  child.resetRotation();
+
+  int revolutions = dist/(wheel_diameter*M_PI); // converts inches into revolutions
+  double gear_ratio = 1; 
+  // loops to slow down as the bot approaches its end position
+  while(fabs(parent.rotation(rev)*gear_ratio)<revolutions*0.6){
+    auto_drive(speed, 0.1);
+  }
+  while(fabs(parent.rotation(rev)*gear_ratio)<revolutions){
+    auto_drive(speed/3, 0.1);
+  }
+
+  // this counteracts the momentum and stops the bot
+  auto_drive(-speed/2, 1);
+  this_thread::sleep_for(50);
+  auto_drive(0, 1); 
+}
+
+void auto_turn(int speed){
+  parent.spin(forward, speed, rpm);
+  child.spin(forward, -speed, rpm);
+}
+
+void auto_turn_deg(int speed, int deg){
+  float r = 0.2f; //this needs to be tuned --> it is basically motor_rev/bot_degree_turned
+
+  parent.resetRotation();
+  child.resetRotation();
+
+  //slows down the bot as it approaches it makes rev
+  //also gear_ratio doesn't matter because r accounts for it I think
+  while(fabs(parent.rotation(rev))/r < deg*0.8){
+    auto_turn(speed);
+  }
+  while(fabs(parent.rotation(rev))/r < deg*0.8){
+    auto_turn(speed/3);
+  }
+  
+  auto_turn(-speed/2);
+  this_thread::sleep_for(50);
+  auto_turn(0); 
+}
+
+/*
+To use this function, enter the speed, in rpms, and a r_test.
+Decide on a degree amount you want the bot to turn: maybe 90 degrees.
+Keep changing r_test until the bot actually reaches that 90 degrees. 
+*/
+void tune_k_for_turn(int speed, int r_test){
+  parent.resetRotation();
+  child.resetRotation();
+
+  while(fabs(parent.rotation(rev)) < r_test){
+    auto_turn(speed);
+  }
+
+  auto_turn(-speed/2);
+  this_thread::sleep_for(50);
+  auto_turn(0); 
+}
+
+
 
 void auton(autons aut) { // choose which auton
   switch (aut) {
