@@ -174,6 +174,7 @@ int main() {
   // Skills test
   // Controller1.ButtonA.pressed([] () { auton(SKILLS_2); });
 
-  Competition.autonomous([]() { auton(R); }); // Which auton to do
-  Competition.drivercontrol(teleop);
+  // Competition.autonomous([]() { auton(R); }); // Which auton to do
+  // Competition.drivercontrol(teleop);
+  auto_drive_dist(12); 
 }

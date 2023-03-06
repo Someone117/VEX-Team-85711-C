@@ -134,7 +134,7 @@ void auto_drive_dist(int dist){
   const double MAX_V = 5;
 
   double total_revs = dist/(wheel_diameter*M_PI); // converts inches into revolutions
-  double gear_ratio = 2/3; 
+  double gear_ratio = 2.0/3; 
   double volts;
 
   // PID
@@ -144,7 +144,7 @@ void auto_drive_dist(int dist){
     pid.sum_int();
     pid.find_deriv();
     volts = volts_checked(pid.output(), MAX_V);
-    auto_drive(volts, MAX_V, 0.1);
+    auto_drive(volts, MAX_V, 0.05);
 
     this_thread::sleep_for(50);
   }
