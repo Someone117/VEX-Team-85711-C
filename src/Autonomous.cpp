@@ -21,7 +21,7 @@ void auton_skills() {
   drive(0, false);
 }
 
-void auton_skills_2() {
+void auton_skills_safe() {
   drive(-75, false);
   this_thread::sleep_for(100);
   drive(-15, false);

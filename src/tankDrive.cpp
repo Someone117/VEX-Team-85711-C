@@ -2,8 +2,8 @@
 #include "vex.h"
 
 void stopDrive() {
-  LeftDrive.stop(brake);
-  RightDrive.stop(brake);
+  LeftDrive.stop(coast);
+  RightDrive.stop(coast);
 }
 double logDrive(double v, double pow) {
   if (v > 0) {
@@ -39,6 +39,13 @@ void driveAndTurn(double d, double t, bool flipDrive) {
     l = 12.8;
   else if (l < -12.8)
     l = -12.8;
+
+  if(l == 0) {
+    LeftDrive.stop(coast);
+  }
+  if(r == 0) {
+    RightDrive.stop(coast);
+  }
   LeftDrive.spin(vex::forward, l, volt);
   RightDrive.spin(vex::forward, r, volt);
 }
