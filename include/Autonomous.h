@@ -19,7 +19,7 @@ enum config {
 void auton_skills();
 void auton_left();
 void auton_right();
-void auton(autons aut);
+void auton(config aut);
 void auton_left_simple();
 void auton_skills_2();
 double volts_checked(double volts, double max, double min);

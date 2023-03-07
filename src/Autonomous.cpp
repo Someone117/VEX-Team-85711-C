@@ -199,7 +199,7 @@ void auton(config c) { // choose which auton
     auton_skills();
     return;
   case AUTO_SKILLS_SAFE:
-    auton_skills_safe();
+    auton_skills_2();
     return;
   case DRIVER_SKILLS:
     return;
