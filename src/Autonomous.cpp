@@ -193,23 +193,25 @@ void auto_turn_deg_PID(int deg, double kP, double kI, double kD, double MAX_V, d
   auto_turn(0); 
 }
 
-void auton(autons aut) { // choose which auton
-  switch (aut) {
-  case L:
-    auton_left();
-    return;
-  case R:
-    auton_right();
-    return;
-  case SKILLS:
+void auton(config c) { // choose which auton
+  switch (c) {
+  case AUTO_SKILLS:
     auton_skills();
     return;
-  case L_SIMPLE:
-    auton_left_simple();
+  case AUTO_SKILLS_SAFE:
+    auton_skills_safe();
     return;
-  case SKILLS_2:
-    auton_skills_2();
+  case DRIVER_SKILLS:
     return;
-  case DISABLED:return;;
+  case MATCH_L:
+    auton_left();
+    return;
+  case MATCH_R:
+    auton_right();
+    return;
+  case NO_AUTO:
+    return;
+  case TESTER:
+    return;
   }
 }

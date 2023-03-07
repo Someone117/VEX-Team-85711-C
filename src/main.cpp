@@ -33,16 +33,14 @@ competition Competition;
 controller::axis driveAxis() { return Controller1.Axis3; }
 controller::axis turnAxis() { return Controller1.Axis1; }
 
-void run(bool flipDrive) { // driving
+void run(bool flipDrive, double value, double lastValue) { // driving
   // Driving
   double deadZone = 15; // prevents drifting
-  double driveAmt = driveAxis().position();
+  double driveAmt = value;
   // Turning
   double turnAmt = turnAxis().position();
   if (std::abs(turnAmt) < deadZone)
     turnAmt = 0;
-  if (std::abs(driveAmt) < deadZone)
-    driveAmt = 0;
   driveAndTurn(driveAmt, turnAmt, flipDrive);
 
   this_thread::sleep_for(50);
@@ -75,18 +73,49 @@ void init() { // init all torque, velocity and breaking
   stopDrive(); // safety
 }
 
-void teleop() {
+void teleop(config c) {
   init();
   bool flip = false;
   // bool endGameReturn = false;
   bool enableIntake = true;
   bool intakeOverride = false;
   double cataVoltage = 10;
+  int endGameTime = 50;
 
+  switch(c){
+    case MATCH_R:
+    endGameTime = 95;
+    case MATCH_L:
+    endGameTime = 95;
+    case DRIVER_SKILLS:
+    endGameTime = 50;
+    default:
+    endGameTime = 0;
+  }
+
+  int deadZone = 15;
+  double value = driveAxis().position();
+  double lastValue = 0;
   double startTime = Brain.Timer.value();
+  int limit = 10;
   while (true) {
     // Drive/turn
-    run(flip);
+    value = driveAxis().position();
+    lastValue = value;
+    if (std::abs(value) < deadZone)
+    value = 0;
+    
+    if(value > lastValue) {
+      if(std::abs(lastValue - value)>limit) {
+      value = lastValue+limit;
+      }
+    } else {
+      if(std::abs(lastValue - value)>limit) {
+      value = lastValue-limit;
+      }
+    }
+
+    run(flip, value, lastValue);
 
     // Cata
     if (CataSW.pressing()) {
@@ -119,9 +148,7 @@ void teleop() {
       Intake.stop();
     }
 
-    if(Controller1.ButtonY.pressing() 
-       && ((Brain.Timer.value() - startTime) > 95)
-      ) {
+    if(Controller1.ButtonY.pressing() && ((Brain.Timer.value() - startTime) > endGameTime) && !LeftEndGame.value() && !RightEndGame.value()) {
       LeftEndGame.set(true);
       RightEndGame.set(true);
     }
@@ -174,7 +201,6 @@ void teleop() {
   }
   thread::interruptAll();
 }
-
 int main() {
   // Initializing Robot Configuration. DO NOT REMOVE!
   vexcodeInit();
@@ -184,20 +210,8 @@ int main() {
   // Skills test
   // Controller1.ButtonA.pressed([] () { auton(SKILLS_2); });
 
-  // Competition.autonomous([]() { auton(R); }); // Which auton to do
-  // Competition.drivercontrol(teleop);
-  //min 3 and max 10 for forward, kP = 3, kI = 0, kD = 50
+  const config globalConfig = TESTER;
 
-
-  
-  double MAX_V = 2.5;
-  double MIN_V = 7;
-  double kP = -2;
-  double kI = -0.0;
-  double kD = 70;
-  int distance = 24;
-  auto_drive_dist(distance, MAX_V, MIN_V, kP, kI, kD);
-  // auto_turn_deg_PID(-45, 25.955, -0.5, 10, -2.5, -4);
-  // LeftEndGame.set(true);
-  // RightEndGame.set(true);
+  Competition.autonomous([]() { auton(globalConfig); }); // Which auton to do
+  Competition.drivercontrol([]() { teleop(globalConfig); });
 }

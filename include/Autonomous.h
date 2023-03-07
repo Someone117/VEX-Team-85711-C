@@ -13,7 +13,9 @@
     Constants kP = -2; kI = 0; kD = 70
 
 */
-enum autons { L, R, SKILLS, DISABLED, L_SIMPLE, SKILLS_2 };
+enum config { 
+  AUTO_SKILLS, AUTO_SKILLS_SAFE, MATCH_L, MATCH_R, DRIVER_SKILLS, TESTER, NO_AUTO
+};
 void auton_skills();
 void auton_left();
 void auton_right();

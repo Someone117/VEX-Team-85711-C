@@ -13,8 +13,8 @@ extern motor Cata;
 extern motor TopLeft;
 extern motor TopRight;
 extern limit CataSW;
-extern digital_out LeftEndGame;
 extern digital_out RightEndGame;
+extern digital_out LeftEndGame;
 extern motor_group LeftDrive;
 extern motor_group RightDrive;
 
