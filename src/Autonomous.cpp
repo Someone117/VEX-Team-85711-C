@@ -1,5 +1,9 @@
 #include "autonomous.h"
 #include "tankDrive.h"
+#include "vex.h"
+#include "robot-config.h"
+#include "Controllers.h"
+#include "iostream"
 
 void auton_skills() {
   drive(-75, false);
@@ -21,7 +25,7 @@ void auton_skills() {
   drive(0, false);
 }
 
-void auton_skills_safe() {
+void auton_skills_2() {
   drive(-75, false);
   this_thread::sleep_for(100);
   drive(-15, false);
@@ -29,7 +33,7 @@ void auton_skills_safe() {
   this_thread::sleep_for(1500);
   Intake.stop();
   stopDrive();
-
+  
   drive(75, false);
   this_thread::sleep_for(925);
   drive(0, false);
@@ -37,7 +41,7 @@ void auton_skills_safe() {
   turn(-100);
   this_thread::sleep_for(320);
   turn(0);
-
+  
   this_thread::sleep_for(100);
   drive(-75, false);
   Intake.spin(vex::reverse, 100, percent);
@@ -45,13 +49,13 @@ void auton_skills_safe() {
   Intake.stop();
   this_thread::sleep_for(200);
   drive(0, false);
-
-  // Intake.spin(vex::forward);
-  // drive(-15, false);
-  // Intake.spin(vex::forward);
-  // Intake.stop();
-  // this_thread::sleep_for(1500);
-  // Intake.stop();
+  
+  //Intake.spin(vex::forward);
+  //drive(-15, false);
+  //Intake.spin(vex::forward);
+  //Intake.stop();
+  //this_thread::sleep_for(1500);
+  //Intake.stop();
   stopDrive();
 
   drive(75, false);
@@ -101,81 +105,92 @@ void auton_right() {
 
 void auton_left_simple() {}
 
+
+double volts_checked(double volts, double max, double min){
+  if(volts > max){
+    return max;
+  }
+  if(volts < min){
+    return min;
+  }
+  return volts; 
+}
+
+
 // this function finds a similar speed for the motorgroups
-void auto_drive(int speed, double c) {
-  float diff =
-      std::abs(parent().rotation(rev)) - std::abs(child().rotation(rev));
-  int sign = diff < 0 ? -1 : 1;
-  int dV = sign * (diff)*speed * c; // c is a constant that needs tuning
-
-  parent().spin(forward, speed, rpm);
-  child().spin(forward, speed + dV, rpm);
+void auto_drive(double volts, double MAX_V, double c){
+  double diff = std::abs(LeftDrive.rotation(rotationUnits::rev)) - std::abs(RightDrive.rotation(rotationUnits::rev));
+  int sign = (diff < 0) ? -1 : 1; 
+  double dV = sign*(diff)*c; // c is a constant that needs tuning
+  Brain.Screen.print(c);
+  Brain.Screen.newLine();
+  LeftDrive.spin(forward, volts, voltageUnits::volt);
+  RightDrive.spin(forward, volts + dV, voltageUnits::volt);
 }
 
-void auto_drive_dist(int speed, int dist) {
+void auto_drive_dist(int dist, double MAX_V, double MIN_V, double kP, double kI, double kD){
+  LeftDrive.resetRotation();
+  RightDrive.resetRotation();
+  dist = std::abs(dist);
+  const double wheel_diameter = 3.25;
+  double total_revs = dist/(wheel_diameter*M_PI); // converts inches into revolutions
+  double gear_ratio = 1.653; // works as a multiplier to account for undershooting
+  double volts;
+  double dT = 50;
+  Main_PID pid(total_revs, kP, kI, kD, dT);
+  while(total_revs*gear_ratio > std::abs(LeftDrive.rotation(rotationUnits::rev))){
+    pid.set_e_cur(std::abs(total_revs) - std::abs(LeftDrive.rotation(rotationUnits::rev)*gear_ratio) ); // total_revs - cur_revs
+    pid.sum_int();
+    pid.find_deriv();
+    double v = pid.output();
+    volts = volts_checked(v, MAX_V, MIN_V);
+    Brain.Screen.print(v); 
+    Brain.Screen.newLine();
+      
+    auto_drive(volts, MAX_V, 0.1); //just changed from 0.05
+
+    this_thread::sleep_for(dT);
+  }
+  Brain.Screen.print("Done");
+  auto_drive(0, MAX_V, 0);
+}
+
+void auto_turn(double volts){
+  LeftDrive.spin(forward, volts, voltageUnits::volt);
+  RightDrive.spin(forward, -volts, voltageUnits::volt);
+}
+
+void auto_turn_deg_PID(int deg, double kP, double kI, double kD, double MAX_V, double MIN_V){
   // reseting the rotation vals to 0
-  parent().resetRotation();
-  child().resetRotation();
+  LeftDrive.resetRotation();
+  RightDrive.resetRotation();
+  deg = std::abs(deg);
+  const double wheel_diameter = 3.25;
+  const double r = 6;
+  double dist = deg*M_PI/180*r;
+  double total_revs = dist/(wheel_diameter*M_PI); // converts inches into revolutions
+  double gear_ratio = 2.0/3; 
+  double volts;
 
-  int revolutions =
-      dist / (wheel_diameter() * M_PI); // converts inches into revolutions
-  double gear_ratio = 1;
-  // loops to slow down as the bot approaches its end position
-  while (std::abs(parent().rotation(rev) * gear_ratio) < revolutions * 0.6) {
-    auto_drive(speed, 0.1);
+  // PID
+  
+  double dT = 50;
+  Main_PID pid(total_revs, kP, kI, kD, dT); 
+  while(std::abs(LeftDrive.rotation(rotationUnits::rev))*gear_ratio < total_revs){
+    pid.set_e_cur(std::abs(total_revs) - std::abs(LeftDrive.rotation(rotationUnits::rev)*gear_ratio) ); // total_revs - cur_revs
+    pid.sum_int();
+    pid.find_deriv();
+    double v = pid.output();
+    volts = volts_checked(v, MAX_V, MIN_V);
+    Brain.Screen.print(v); 
+    Brain.Screen.newLine();
+      
+    auto_turn(volts);
+
+    this_thread::sleep_for(dT);
   }
-  while (std::abs(parent().rotation(rev) * gear_ratio) < revolutions) {
-    auto_drive(speed / 3, 0.1);
-  }
-
-  // this counteracts the momentum and stops the bot
-  auto_drive(-speed / 2, 1);
-  this_thread::sleep_for(50);
-  auto_drive(0, 1);
-}
-
-void auto_turn(int speed) {
-  parent().spin(forward, speed, rpm);
-  child().spin(forward, -speed, rpm);
-}
-
-void auto_turn_deg(int speed, int deg) {
-  float r = 0.2f; // this needs to be tuned --> it is basically
-                  // motor_rev/bot_degree_turned
-
-  parent().resetRotation();
-  child().resetRotation();
-
-  // slows down the bot as it approaches it makes rev
-  // also gear_ratio doesn't matter because r accounts for it I think
-  while (std::abs(parent().rotation(rev)) / r < deg * 0.8) {
-    auto_turn(speed);
-  }
-  while (std::abs(parent().rotation(rev)) / r < deg * 0.8) {
-    auto_turn(speed / 3);
-  }
-
-  auto_turn(-speed / 2);
-  this_thread::sleep_for(50);
-  auto_turn(0);
-}
-
-/*
-To use this function, enter the speed, in rpms, and a r_test.
-Decide on a degree amount you want the bot to turn: maybe 90 degrees.
-Keep changing r_test until the bot actually reaches that 90 degrees.
-*/
-void tune_k_for_turn(int speed, int r_test) {
-  parent().resetRotation();
-  child().resetRotation();
-
-  while (std::abs(parent().rotation(rev)) < r_test) {
-    auto_turn(speed);
-  }
-
-  auto_turn(-speed / 2);
-  this_thread::sleep_for(50);
-  auto_turn(0);
+ 
+  auto_turn(0); 
 }
 
 void auton(config c) { // choose which auton
