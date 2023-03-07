@@ -75,14 +75,25 @@ void init() { // init all torque, velocity and breaking
   stopDrive(); // safety
 }
 
-void teleop() {
+void teleop(config c) {
   init();
   bool flip = false;
   // bool endGameReturn = false;
   bool enableIntake = true;
   bool intakeOverride = false;
   double cataVoltage = 10;
+  int endGameTime = 50;
 
+  switch(c){
+    case MATCH_R:
+    endGameTime = 95;
+    case MATCH_L:
+    endGameTime = 95;
+    case DRIVER_SKILLS:
+    endGameTime = 50;
+    default:
+    endGameTime = 0;
+  }
   double startTime = Brain.Timer.value();
   while (true) {
     // Drive/turn
@@ -119,9 +130,7 @@ void teleop() {
       Intake.stop();
     }
 
-    if(Controller1.ButtonY.pressing() 
-       && ((Brain.Timer.value() - startTime) > 95)
-      ) {
+    if(Controller1.ButtonY.pressing() && ((Brain.Timer.value() - startTime) > endGameTime) && !LeftEndGame.value() && !RightEndGame.value()) {
       LeftEndGame.set(true);
       RightEndGame.set(true);
     }
@@ -183,6 +192,8 @@ int main() {
   // Skills test
   // Controller1.ButtonA.pressed([] () { auton(SKILLS_2); });
 
-  Competition.autonomous([]() { auton(R); }); // Which auton to do
-  Competition.drivercontrol(teleop);
+  const config globalConfig = TESTER;
+
+  Competition.autonomous([]() { auton(globalConfig); }); // Which auton to do
+  Competition.drivercontrol([]() { teleop(globalConfig); });
 }

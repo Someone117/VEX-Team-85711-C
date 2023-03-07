@@ -1,13 +1,15 @@
 #pragma once
 #include "vex.h"
 
-enum autons { L, R, SKILLS, DISABLED, L_SIMPLE, SKILLS_2 };
+enum config { 
+  AUTO_SKILLS, AUTO_SKILLS_SAFE, MATCH_L, MATCH_R, DRIVER_SKILLS, TESTER, NO_AUTO
+};
 void auton_skills();
 void auton_left();
 void auton_right();
-void auton(autons aut);
+void auton(config c);
 void auton_left_simple();
-void auton_skills_2();
+void auton_skills_safe();
 
 void tune_k_for_turn();
 void auto_turn_deg();
