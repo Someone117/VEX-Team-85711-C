@@ -33,16 +33,14 @@ competition Competition;
 controller::axis driveAxis() { return Controller1.Axis3; }
 controller::axis turnAxis() { return Controller1.Axis1; }
 
-void run(bool flipDrive) { // driving
+void run(bool flipDrive, double value, double lastValue) { // driving
   // Driving
   double deadZone = 15; // prevents drifting
-  double driveAmt = driveAxis().position();
+  double driveAmt = value;
   // Turning
   double turnAmt = turnAxis().position();
   if (std::abs(turnAmt) < deadZone)
     turnAmt = 0;
-  if (std::abs(driveAmt) < deadZone)
-    driveAmt = 0;
   driveAndTurn(driveAmt, turnAmt, flipDrive);
 
   this_thread::sleep_for(50);
@@ -94,10 +92,30 @@ void teleop(config c) {
     default:
     endGameTime = 0;
   }
+
+  int deadZone = 15;
+  double value = driveAxis().position();
+  double lastValue = 0;
   double startTime = Brain.Timer.value();
+  int limit = 10;
   while (true) {
     // Drive/turn
-    run(flip);
+    value = driveAxis().position();
+    lastValue = value;
+    if (std::abs(value) < deadZone)
+    value = 0;
+    
+    if(value > lastValue) {
+      if(std::abs(lastValue - value)>limit) {
+      value = lastValue+limit;
+      }
+    } else {
+      if(std::abs(lastValue - value)>limit) {
+      value = lastValue-limit;
+      }
+    }
+
+    run(flip, value, lastValue);
 
     // Cata
     if (CataSW.pressing()) {
