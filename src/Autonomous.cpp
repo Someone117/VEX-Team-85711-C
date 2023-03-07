@@ -2,7 +2,8 @@
 #include "tankDrive.h"
 #include "vex.h"
 #include "robot-config.h"
-#include "Main_PID.h"
+#include "Controllers.h"
+#include "iostream"
 
 void auton_skills() {
   drive(-75, false);
@@ -105,12 +106,12 @@ void auton_right() {
 void auton_left_simple() {}
 
 
-double volts_checked(double volts, double max){
+double volts_checked(double volts, double max, double min){
   if(volts > max){
     return max;
   }
-  if(volts < -max){
-    return -max;
+  if(volts < min){
+    return min;
   }
   return volts; 
 }
@@ -119,37 +120,39 @@ double volts_checked(double volts, double max){
 // this function finds a similar speed for the motorgroups
 void auto_drive(double volts, double MAX_V, double c){
   double diff = std::abs(LeftDrive.rotation(rotationUnits::rev)) - std::abs(RightDrive.rotation(rotationUnits::rev));
-  int sign = diff < 0 ? -1 : 1; 
+  int sign = (diff < 0) ? -1 : 1; 
   double dV = sign*(diff)*c; // c is a constant that needs tuning
-
+  Brain.Screen.print(c);
+  Brain.Screen.newLine();
   LeftDrive.spin(forward, volts, voltageUnits::volt);
-  RightDrive.spin(forward, volts_checked(volts + dV, MAX_V), voltageUnits::volt);
+  RightDrive.spin(forward, volts + dV, voltageUnits::volt);
 }
 
-void auto_drive_dist(int dist){
-  // reseting the rotation vals to 0
+void auto_drive_dist(int dist, double MAX_V, double MIN_V, double kP, double kI, double kD){
   LeftDrive.resetRotation();
   RightDrive.resetRotation();
+  dist = std::abs(dist);
   const double wheel_diameter = 3.25;
-  const double MAX_V = 5;
-
   double total_revs = dist/(wheel_diameter*M_PI); // converts inches into revolutions
-  double gear_ratio = 2.0/3; 
+  double gear_ratio = 1.653; // works as a multiplier to account for undershooting
   double volts;
-
-  // PID
-  Main_PID pid(total_revs); 
-  while(LeftDrive.rotation(rotationUnits::rev)*gear_ratio < total_revs){
-    pid.set_e_cur(total_revs - std::abs(LeftDrive.rotation(rotationUnits::rev)*gear_ratio) ); // total_revs - cur_revs
+  double dT = 50;
+  Main_PID pid(total_revs, kP, kI, kD, dT);
+  while(total_revs*gear_ratio > std::abs(LeftDrive.rotation(rotationUnits::rev))){
+    pid.set_e_cur(std::abs(total_revs) - std::abs(LeftDrive.rotation(rotationUnits::rev)*gear_ratio) ); // total_revs - cur_revs
     pid.sum_int();
     pid.find_deriv();
-    volts = volts_checked(pid.output(), MAX_V);
-    auto_drive(volts, MAX_V, 0.05);
+    double v = pid.output();
+    volts = volts_checked(v, MAX_V, MIN_V);
+    Brain.Screen.print(v); 
+    Brain.Screen.newLine();
+      
+    auto_drive(volts, MAX_V, 0.1); //just changed from 0.05
 
-    this_thread::sleep_for(50);
+    this_thread::sleep_for(dT);
   }
- 
-  auto_drive(0, MAX_V, 1); 
+  Brain.Screen.print("Done");
+  auto_drive(0, MAX_V, 0);
 }
 
 void auto_turn(double volts){
@@ -157,47 +160,38 @@ void auto_turn(double volts){
   RightDrive.spin(forward, -volts, voltageUnits::volt);
 }
 
-void auto_turn_deg(double volts, int deg){
-  double r = 0.2; //this needs to be tuned
-  volts = volts_checked(volts, 5); 
-
+void auto_turn_deg_PID(int deg, double kP, double kI, double kD, double MAX_V, double MIN_V){
+  // reseting the rotation vals to 0
   LeftDrive.resetRotation();
   RightDrive.resetRotation();
+  deg = std::abs(deg);
+  const double wheel_diameter = 3.25;
+  const double r = 6;
+  double dist = deg*M_PI/180*r;
+  double total_revs = dist/(wheel_diameter*M_PI); // converts inches into revolutions
+  double gear_ratio = 2.0/3; 
+  double volts;
 
-  //slows down the bot as it approaches it makes rev
-  //also gear_ratio doesn't matter because r accounts for it I think
-  while(std::abs(LeftDrive.rotation(rotationUnits::rev))/r < deg*0.8){
-    auto_turn(volts);
-  }
-  while(std::abs(LeftDrive.rotation(rotationUnits::rev))/r < deg*0.8){
-    auto_turn(volts/3);
-  }
+  // PID
   
-  auto_turn(-volts/2);
-  this_thread::sleep_for(50);
-  auto_turn(0); 
-}
-
-/*
-To use this function, enter the speed, in rpms, and a r_test.
-Decide on a degree amount you want the bot to turn: maybe 90 degrees.
-Keep changing r_test until the bot actually reaches that 90 degrees. 
-*/
-void tune_r_for_turn(double volts, int r_test){
-  volts = volts_checked(volts, 5); 
-  LeftDrive.resetRotation();
-  RightDrive.resetRotation();
-
-  while(std::abs(LeftDrive.rotation(rotationUnits::rev)) < r_test){
+  double dT = 50;
+  Main_PID pid(total_revs, kP, kI, kD, dT); 
+  while(std::abs(LeftDrive.rotation(rotationUnits::rev))*gear_ratio < total_revs){
+    pid.set_e_cur(std::abs(total_revs) - std::abs(LeftDrive.rotation(rotationUnits::rev)*gear_ratio) ); // total_revs - cur_revs
+    pid.sum_int();
+    pid.find_deriv();
+    double v = pid.output();
+    volts = volts_checked(v, MAX_V, MIN_V);
+    Brain.Screen.print(v); 
+    Brain.Screen.newLine();
+      
     auto_turn(volts);
-  }
 
-  auto_turn(-volts/2);
-  this_thread::sleep_for(50);
+    this_thread::sleep_for(dT);
+  }
+ 
   auto_turn(0); 
 }
-
-
 
 void auton(autons aut) { // choose which auton
   switch (aut) {

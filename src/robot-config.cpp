@@ -18,6 +18,8 @@ motor Cata = motor(PORT20, ratio36_1, false);
 motor TopLeft = motor(PORT4, ratio6_1, false);
 motor TopRight = motor(PORT7, ratio6_1, true);
 limit CataSW = limit(Brain.ThreeWirePort.A);
+digital_out LeftEndGame = digital_out(Brain.ThreeWirePort.B);
+digital_out RightEndGame = digital_out(Brain.ThreeWirePort.C);
 motor_group LeftDrive = motor_group(BottomLeft, TopLeft, BackLeft);
 motor_group RightDrive = motor_group(BottomRight, TopRight, BackRight);
 

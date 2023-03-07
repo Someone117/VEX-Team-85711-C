@@ -1,6 +1,18 @@
 #pragma once
 #include "vex.h"
+/*  For Angles (positive is to the right):
+    +90: max = 7.1; min = 4
+    -90: max = -3; min = -4.998
+    +45: max = 6.17; min = 4
+    -45: max = -2.5; min = -4
+    Constants: kP = 25.955; kI = -0.5; kD = 10
 
+
+    For Distance:
+    +24: max = 2.5; min = 7?
+    Constants kP = -2; kI = 0; kD = 70
+
+*/
 enum autons { L, R, SKILLS, DISABLED, L_SIMPLE, SKILLS_2 };
 void auton_skills();
 void auton_left();
@@ -8,9 +20,8 @@ void auton_right();
 void auton(autons aut);
 void auton_left_simple();
 void auton_skills_2();
-double volts_checked(double volts, double max);
+double volts_checked(double volts, double max, double min);
 void auto_drive(double volts, double MAX_V, double c);
-void auto_drive_dist(int dist);
+void auto_drive_dist(int dist, double MAX_V, double MIN_V, double kP, double kI, double kD);
 void auto_turn(double volts);
-void auto_turn_deg(double volts, int deg);
-void tune_r_for_turn(double volts, int r_test);
+void auto_turn_deg_PID(int deg, double kP, double kI, double kD, double MAX_V, double min);

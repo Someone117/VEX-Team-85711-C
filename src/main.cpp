@@ -82,6 +82,8 @@ void teleop() {
   bool enableIntake = true;
   bool intakeOverride = false;
   double cataVoltage = 10;
+
+  double startTime = Brain.Timer.value();
   while (true) {
     // Drive/turn
     run(flip);
@@ -115,6 +117,13 @@ void teleop() {
       Intake.spin(vex::reverse);
     } else {
       Intake.stop();
+    }
+
+    if(Controller1.ButtonY.pressing() 
+       && ((Brain.Timer.value() - startTime) > 95)
+      ) {
+      LeftEndGame.set(true);
+      RightEndGame.set(true);
     }
 
     // Drive inversion
@@ -165,6 +174,7 @@ void teleop() {
   }
   thread::interruptAll();
 }
+
 int main() {
   // Initializing Robot Configuration. DO NOT REMOVE!
   vexcodeInit();
@@ -176,5 +186,18 @@ int main() {
 
   // Competition.autonomous([]() { auton(R); }); // Which auton to do
   // Competition.drivercontrol(teleop);
-  auto_drive_dist(12); 
+  //min 3 and max 10 for forward, kP = 3, kI = 0, kD = 50
+
+
+  
+  double MAX_V = 2.5;
+  double MIN_V = 7;
+  double kP = -2;
+  double kI = -0.0;
+  double kD = 70;
+  int distance = 24;
+  auto_drive_dist(distance, MAX_V, MIN_V, kP, kI, kD);
+  // auto_turn_deg_PID(-45, 25.955, -0.5, 10, -2.5, -4);
+  // LeftEndGame.set(true);
+  // RightEndGame.set(true);
 }
